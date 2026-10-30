@@ -22,7 +22,8 @@ import {
 } from './secret-scan-lib.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const supportedRunnerMatrix = ['ubuntu-24.04', 'windows-2025', 'macos-15']
+const supportedNativeRunnerMatrix = ['ubuntu-24.04', 'windows-2025']
+const frontendRunnerMatrix = [...supportedNativeRunnerMatrix, 'macos-15']
 
 const unixHarnessManifest = 'apps/desktop/src-tauri/build_support/unix-test-harness/Cargo.toml'
 const unixHarnessCommands = [
@@ -35,8 +36,8 @@ function assertNativeUnixHarnessPolicy(text) {
   const workflow = parse(text)
   assert.deepEqual(
     workflow?.jobs?.native?.strategy?.matrix?.os,
-    supportedRunnerMatrix,
-    'native-build.yml must retain the Linux, Windows, and macOS runner matrix',
+    supportedNativeRunnerMatrix,
+    'native-build.yml must retain the supported Linux and Windows runner matrix',
   )
   const steps = workflow?.jobs?.native?.steps
   assert.ok(Array.isArray(steps), 'native-build.yml must define the native job steps')
@@ -137,13 +138,27 @@ assert.equal(
 )
 
 const ciWorkflow = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
-for (const job of ['python', 'frontend']) {
-  assert.deepEqual(
-    parse(ciWorkflow)?.jobs?.[job]?.strategy?.matrix?.os,
-    supportedRunnerMatrix,
-    `CI ${job} must retain supported Linux, Windows, and macOS runners`,
-  )
-}
+const ciJobs = parse(ciWorkflow)?.jobs
+assert.deepEqual(
+  ciJobs?.python?.strategy?.matrix?.os,
+  supportedNativeRunnerMatrix,
+  'full Python qualification must run on supported Linux and Windows platforms',
+)
+assert.deepEqual(
+  ciJobs?.frontend?.strategy?.matrix?.os,
+  frontendRunnerMatrix,
+  'frontend checks may also run on experimental macOS',
+)
+const macosScanJob = ciJobs?.['macos-scan']
+assert.equal(macosScanJob?.['runs-on'], 'macos-15', 'macOS scanner scope must run on a hosted macOS runner')
+assert.equal(macosScanJob?.['continue-on-error'], undefined, 'macOS scanner failures must fail CI')
+const macosScanSteps = macosScanJob?.steps
+assert.ok(Array.isArray(macosScanSteps), 'macOS scanner scope must define steps')
+assert.ok(macosScanSteps.some((step) => step?.run === 'uv sync --frozen'), 'macOS scanner scope must sync the exact Python lock')
+assert.ok(
+  macosScanSteps.some((step) => step?.run === 'uv run pytest services/engine/tests/test_scanner.py -q'),
+  'macOS scanner scope must run the real scanner test module without exclusions',
+)
 assert.match(ciWorkflow, /pytest services\/engine\/tests packages\/sdk-python\/tests packages\/protocol\/tests scripts\/tests -q/u)
 assert.match(ciWorkflow, /ruff check services\/engine packages\/sdk-python packages\/protocol\/tests scripts/u)
 assert.match(ciWorkflow, /mypy services\/engine\/src packages\/sdk-python\/src scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py scripts\/tests/u)
@@ -168,8 +183,8 @@ assert.throws(
   /excluded only on Windows/u,
 )
 assert.throws(
-  () => assertNativeUnixHarnessPolicy(nativeWorkflow.replace('          - macos-15\n', '')),
-  /Linux, Windows, and macOS runner matrix/u,
+  () => assertNativeUnixHarnessPolicy(nativeWorkflow.replace('          - ubuntu-24.04\n', '')),
+  /supported Linux and Windows runner matrix/u,
 )
 
 const codeqlJob = parse(readFileSync(path.join(root, '.github/workflows/codeql.yml'), 'utf8'))?.jobs?.analyze

@@ -533,6 +533,7 @@ def test_windows_missing_parent_evidence_remains_access_denied(
     )
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows psutil private backend")
 def test_windows_parent_snapshot_rejects_malformed_private_api_values(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

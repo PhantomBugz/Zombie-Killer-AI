@@ -1,5 +1,7 @@
 # Native desktop boundary
 
+This alpha qualifies native source and verification artifacts on Windows and Ubuntu Linux. macOS native builds and mutation workflows remain experimental and unqualified; macOS CI covers only scanner unit tests and the browser frontend.
+
 Zombie Killer exposes one Tauri command to its main window: `engine_request`. The renderer can submit only the finite, typed request variants compiled into the Rust broker. It cannot select an executable, command-line argument, working directory, environment variable, or protocol request ID. Local source registration and diagnostics export accept an explicitly selected path through their specific bounded methods; they do not expose a general filesystem or shell interface. Cleanup uses the selected agent's registered resource ID, not a renderer-supplied cleanup path.
 
 The broker owns the remaining authority:
@@ -59,13 +61,13 @@ The local workflow composition covers scan and agent detail, activity and receip
 
 Memory workflows preserve engine revision digests. A plan does not represent an already-verified backup; the adapter must create and verify the backup before a mutation is issued. Plans, executable authority, snapshots, and receipts persist across the broker's one-shot engine invocations. Cleanup authority requires the exact registration nonce, creating process identity, approved root, and resource fingerprint. Legacy path-only resource declarations remain inspectable without being upgraded into cleanup authorization.
 
-At engine startup, a supported platform must also pass a non-signaling bind, identity validation, and close against the already-read engine process identity before action methods are installed. This catches Linux kernels that expose a Python `pidfd_open` wrapper but reject the runtime syscall. This alpha supports process actions through stable Windows process handles and through Linux only when both `pidfd_open` and `pidfd_send_signal` are available and that runtime probe succeeds. macOS is read-only for process actions, as are Linux hosts without working pidfd support. The Swarm and Settings views label that limitation and do not expose the review or execute controls.
+At engine startup, a supported platform must also pass a non-signaling bind, identity validation, and close against the already-read engine process identity before action methods are installed. This catches Linux kernels that expose a Python `pidfd_open` wrapper but reject the runtime syscall. This alpha supports process actions through stable Windows process handles and through Linux only when both `pidfd_open` and `pidfd_send_signal` are available and that runtime probe succeeds. Linux hosts without working pidfd support remain read-only for process actions. macOS native behavior is unqualified; its current engine code declines process actions. The Swarm and Settings views label unavailable capabilities and do not expose their review or execute controls.
 
 Native action and activity receipts preserve the protocol's bounded, redacted `partial_failures`. Any nonempty list is shown as a partial outcome even when action issuance itself is verified; it is never presented as completed success.
 
 The following remain outside the supported native capability boundary:
 
-- process actions on macOS and on Linux hosts without working support for both required pidfd primitives;
+- process actions on Linux hosts without working support for both required pidfd primitives, and all macOS native workflows in this alpha;
 - generic writable Chroma or FAISS adapters; recognized Chroma SQLite remains read-only and common FAISS flat-index headers provide bounded inventory only, not vector validation;
 - arbitrary SQL, shell commands, filesystem browsing, and remote fleet control; and
 - unattended process termination, automatic updates, and signed/notarized installer distribution.

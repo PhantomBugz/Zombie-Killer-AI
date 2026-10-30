@@ -23,12 +23,14 @@ The name is playful; the evidence model is not. A true POSIX zombie is a **defun
 > [!WARNING]
 > This is alpha developer software. Review every preview and keep independent backups. Source builds are not signed installers. Platform permissions, process visibility, and supported mutations vary; an empty scan is not proof that no agent is running.
 
+**Alpha platform scope:** Windows and Ubuntu Linux are the source qualification targets. macOS native builds and mutation workflows remain experimental and unqualified; CI checks only scanner unit tests and the browser frontend on macOS. No macOS native artifact is offered.
+
 ## What is implemented
 
 | Area | Alpha status | Boundary |
 | --- | --- | --- |
 | Swarm radar | Implemented | Current-user process evidence, SDK leases, explicit coverage warnings, deterministic classifications |
-| Process actions | Domain plan/execute primitives are implemented; the identity-bound CLI and reviewed native stop transport are enabled only when the engine confirms a kernel-stable process binding | Windows uses stable process handles. Linux requires both `pidfd_open` and `pidfd_send_signal` plus a successful runtime pidfd bind probe. macOS is read-only for process actions in this alpha; plans remain short-lived, immutable, and revalidated before signals |
+| Process actions | Domain plan/execute primitives are implemented; the identity-bound CLI and reviewed native stop transport are enabled only when the engine confirms a kernel-stable process binding | Windows uses stable process handles. Linux requires both `pidfd_open` and `pidfd_send_signal` plus a successful runtime pidfd bind probe. macOS native support is unqualified and current code declines process actions; plans remain short-lived, immutable, and revalidated before signals |
 | Graveyard | Reviewed quarantine of complete SDK temporary-resource declarations and exact-entry restore in the service, desktop, and CLI | Unchanged approved root, registration identity/nonce, and resource fingerprint are required; legacy path-only declarations do not authorize cleanup; restore never overwrites |
 | Memory Vault | Explicit source registration, supported scalar repairs, verified snapshots, and planned restore | JSON/JSONL require cooperative or paused writers; SQLite uses constrained transactions and schema-gated restore; Chroma and supported FAISS headers remain inventory-only |
 | Activity/receipts | Durable mixed-operation receipts, lookup, and explicit local diagnostics export | Export excludes private memory drafts and sensitive content, preserves existing destinations, and reports uncertainty without relabeling success |
@@ -62,7 +64,7 @@ Read [Privacy](PRIVACY.md), [Responsible Use](RESPONSIBLE_USE.md), and the [thre
 - pnpm `10.33.2` through Corepack
 - Python `3.11`–`3.13` and `uv 0.12.3`
 - Rust `1.97.1` for native builds
-- The [Tauri 2 system prerequisites](https://v2.tauri.app/start/prerequisites/) for Windows, macOS, or Linux native builds
+- The [Tauri 2 system prerequisites](https://v2.tauri.app/start/prerequisites/) for Windows or Linux native builds
 
 The repository rejects mismatched Node or pnpm versions in CI. Do not use the documented local bootstrap bypass for release verification.
 
@@ -81,7 +83,7 @@ pnpm install --frozen-lockfile
 pnpm verify:web
 ```
 
-### macOS or Linux
+### Linux
 
 ```bash
 git clone https://github.com/PhantomBugz/Zombie-Killer-AI.git
@@ -94,7 +96,9 @@ pnpm install --frozen-lockfile
 pnpm verify:web
 ```
 
-`pnpm verify:web` checks public docs and the browser UI; it does not verify the native app. The full [source-release gate](docs/release-verification.md) also builds and tests the native app. On Windows, run that full gate only in a disposable user profile or a GitHub-hosted runner because the engine can write to OS-known current-user state. Platform-specific process access and filesystem primitives can cause explicit skips or reduced coverage. The CI matrix is the public record of tested platforms.
+The macOS browser preview can be built from source, but its frontend and scanner unit checks do not qualify a native app. Do not treat a macOS source build as a supported alpha artifact.
+
+`pnpm verify:web` checks public docs and the browser UI; it does not verify the native app. The full [source-release gate](docs/release-verification.md) builds and tests the native app on Windows and Linux. On Windows, run that full gate only in a disposable user profile or a GitHub-hosted runner because the engine can write to OS-known current-user state. Platform-specific process access and filesystem primitives can cause explicit skips or reduced coverage. The CI matrix is the public record of tested platforms.
 
 ## Run it
 
@@ -131,7 +135,7 @@ uv run zk action execute <plan-id> <digest> --confirm
 
 Copy the PID and process-instance ID from the same fresh scan you reviewed. The CLI never selects a target from the agent ID alone, and a restarted or PID-reused process is rejected as `target_changed`.
 
-Process actions are available on Windows and on Linux hosts where both required pidfd primitives pass the engine's non-signaling runtime bind probe. On macOS, and on Linux hosts where pidfd is missing or rejected by the running kernel, `zk doctor` reports `action.plan` and `action.execute` unavailable; scanning and inspection remain read-only.
+Process actions are available on Windows and on Linux hosts where both required pidfd primitives pass the engine's non-signaling runtime bind probe. On Linux hosts where pidfd is missing or rejected by the running kernel, `zk doctor` reports `action.plan` and `action.execute` unavailable; scanning and inspection remain read-only. The current macOS engine code also declines process actions, but macOS native operation has not completed alpha qualification.
 
 For `zk action execute`, exit code `0` means the engine returned a valid local receipt; it does
 not by itself mean the action completed. The human-readable output distinguishes verified

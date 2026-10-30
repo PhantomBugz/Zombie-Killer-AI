@@ -57,7 +57,7 @@ Consequences:
 - Register an explicit local source before native Memory Vault operations; recognized vector formats stay read-only or inventory-only.
 - Quarantine only complete, unchanged SDK-declared temporary resources; restore the exact recorded entry without overwriting its original destination.
 - Export diagnostics only to a reviewed explicit local destination; existing files are preserved and private memory drafts are excluded.
-- Process actions remain platform-specific: Windows stable handles, Linux runtime-probed pidfd support, and macOS read-only process inspection. `zk action plan` requires exact scan-derived PID and process-instance ID, not an agent ID alone.
+- Process actions remain platform-specific: Windows stable handles and Linux runtime-probed pidfd support. macOS native operation remains experimental and unqualified; its current engine code declines process actions. `zk action plan` requires exact scan-derived PID and process-instance ID, not an agent ID alone.
 - Separate adapter tests, real one-shot broker integration, native startup smoke, browser checks, and clean-machine release evidence.
 
 Supported concurrency limits are documented in [Memory Vault](memory-vault.md). Signing, clean-machine verification, and platform release coverage remain explicit gates in [release verification](release-verification.md) and [ROADMAP.md](../ROADMAP.md).
