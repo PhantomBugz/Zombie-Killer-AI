@@ -51,6 +51,7 @@ export const REQUIRED_PUBLIC_FILES = [
   'docs/release-verification.md',
   'docs/threat-model.md',
   'scripts/verify.ps1',
+  'scripts/ci_windows_owner.py',
   'scripts/package-native-artifact.py',
   'scripts/native-smoke.ps1',
   'scripts/build-portable-exe.py',

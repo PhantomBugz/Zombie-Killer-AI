@@ -83,7 +83,15 @@ jobs:
             Remove-Item -LiteralPath $probe -Force
           }
       - name: Test engine, SDK, and release helpers
+        if: runner.os != 'Windows'
         run: uv run pytest services/engine/tests packages/sdk-python/tests packages/protocol/tests scripts/tests -q
+      - name: Test engine, SDK, and release helpers on Windows
+        if: runner.os == 'Windows'
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
+        run: |
+          $ErrorActionPreference = 'Stop'
+          uv run pytest services/engine/tests packages/sdk-python/tests packages/protocol/tests scripts/tests -q
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Static Python checks
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |

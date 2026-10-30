@@ -58,10 +58,11 @@ jobs:
           pnpm install --frozen-lockfile
       - name: Run full Windows source release gate
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
         env:
           ZK_DISPOSABLE_WINDOWS_PROFILE: '1'
         run: |
+          $ErrorActionPreference = 'Stop'
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Full Windows verification requires a disposable GitHub-hosted runner.' }
           pnpm verify
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -91,8 +92,9 @@ jobs:
         run: uv run --frozen python -I scripts/package-native-artifact.py
       - name: Package verified Windows native artifact
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
         run: |
+          $ErrorActionPreference = 'Stop'
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Windows artifact packaging requires a disposable GitHub-hosted runner.' }
           $native = 'apps/desktop/src-tauri/target/release/zombie-killer.exe'
           $manifest = 'apps/desktop/src-tauri/resources/engine/BUILD-MANIFEST.json'
@@ -108,8 +110,9 @@ jobs:
           if ($checksums -cnotcontains $expectedLine) { throw 'Windows native ZIP does not match SHA256SUMS.' }
       - name: Verify portable builder and smoke helpers
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
         run: |
+          $ErrorActionPreference = 'Stop'
           uv run --frozen pytest -p no:cacheprovider scripts/tests/test_portable_exe.py -q
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           pwsh -NoProfile -File scripts/tests/native-smoke.tests.ps1
@@ -118,10 +121,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Smoke test the extracted Windows native archive
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
         env:
           ZK_DISPOSABLE_WINDOWS_PROFILE: '1'
         run: |
+          $ErrorActionPreference = 'Stop'
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Extracted ZIP smoke requires a disposable GitHub-hosted Windows runner.' }
           $archive = @(Get-ChildItem -LiteralPath artifacts/native -Filter '*.zip' -File)
           if ($archive.Count -ne 1) { throw 'Expected exactly one native verification archive.' }
@@ -135,10 +139,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify unsigned portable Windows executable
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
         env:
           ZK_DISPOSABLE_WINDOWS_PROFILE: '1'
         run: |
+          $ErrorActionPreference = 'Stop'
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Portable smoke requires a disposable GitHub-hosted Windows runner.' }
           $archive = @(Get-ChildItem -LiteralPath artifacts/native -Filter '*.zip' -File)
           if ($archive.Count -ne 1) { throw 'Expected exactly one native verification archive.' }

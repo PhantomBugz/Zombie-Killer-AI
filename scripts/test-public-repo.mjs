@@ -55,6 +55,7 @@ function assertNativeUnixHarnessPolicy(text) {
 }
 
 function assertHostedWindowsSourceGatePolicy(text) {
+  const ownerShell = 'python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"'
   const steps = parse(text)?.jobs?.native?.steps
   assert.ok(Array.isArray(steps), 'native-build.yml must define native verification steps')
   const named = (name) => steps.find((step) => step?.name === name)
@@ -64,7 +65,7 @@ function assertHostedWindowsSourceGatePolicy(text) {
   const gate = named('Run full Windows source release gate')
   assert.ok(gate, 'Windows must run the full source release gate')
   assert.equal(gate.if, "runner.os == 'Windows'")
-  assert.equal(gate.shell, 'pwsh')
+  assert.equal(gate.shell, ownerShell)
   assert.equal(gate.env?.ZK_DISPOSABLE_WINDOWS_PROFILE, '1')
   assert.match(gate.run, /\$env:RUNNER_ENVIRONMENT -ne 'github-hosted'/u)
   assert.match(gate.run, /(?:^|\n)\s*pnpm verify(?:\r?\n|$)/u, 'Windows gate must invoke verifier through pnpm')
@@ -88,6 +89,16 @@ function assertHostedWindowsSourceGatePolicy(text) {
   assert.match(windowsPackage.run, /SHA256SUMS/u)
   assert.ok(position(gate.name) < position(windowsPackage.name))
   assert.ok(position(windowsPackage.name) < position('Verify unsigned portable Windows executable'))
+  for (const name of [
+    'Package verified Windows native artifact',
+    'Verify portable builder and smoke helpers',
+    'Smoke test the extracted Windows native archive',
+    'Verify unsigned portable Windows executable',
+  ]) {
+    const step = named(name)
+    assert.equal(step?.shell, ownerShell, `${name} must run with the token user's default owner`)
+    assert.match(step.run, /^\s*\$ErrorActionPreference = 'Stop'/u)
+  }
   const portable = named('Verify unsigned portable Windows executable')
   assert.equal(portable?.if, "runner.os == 'Windows'")
   assert.match(portable.run, /scripts\/build-portable-exe\.py/u)
@@ -159,6 +170,15 @@ assert.ok(
   macosScanSteps.some((step) => step?.run === 'uv run pytest services/engine/tests/test_scanner.py -q'),
   'macOS scanner scope must run the real scanner test module without exclusions',
 )
+const windowsPythonTests = ciJobs?.python?.steps?.find(
+  (step) => step?.name === 'Test engine, SDK, and release helpers on Windows',
+)
+assert.equal(windowsPythonTests?.if, "runner.os == 'Windows'")
+assert.equal(
+  windowsPythonTests?.shell,
+  'python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"',
+)
+assert.match(windowsPythonTests.run, /^\s*\$ErrorActionPreference = 'Stop'/u)
 assert.match(ciWorkflow, /pytest services\/engine\/tests packages\/sdk-python\/tests packages\/protocol\/tests scripts\/tests -q/u)
 assert.match(ciWorkflow, /ruff check services\/engine packages\/sdk-python packages\/protocol\/tests scripts/u)
 assert.match(ciWorkflow, /mypy services\/engine\/src packages\/sdk-python\/src scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py scripts\/tests/u)
