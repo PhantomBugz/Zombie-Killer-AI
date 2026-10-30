@@ -16,11 +16,11 @@ Issues = "https://github.com/PhantomBugz/Zombie-Killer-AI/issues"
 
 [dependency-groups]
 dev = [
-  "jsonschema==4.25.1",
-  "mypy==2.3.0",
-  "pyinstaller==6.18.0",
+  "jsonschema==4.26.0",
+  "mypy==2.4.0",
+  "pyinstaller==6.22.3",
   "pytest==9.1.1",
-  "ruff==0.16.2",
+  "ruff==0.17.3",
 ]
 
 [tool.uv]
