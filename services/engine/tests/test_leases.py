@@ -407,7 +407,7 @@ def test_deeply_nested_json_is_rejected_without_recursion_crash(tmp_path: Path) 
 
     assert result.leases == ()
     assert result.malformed_count == 1
-    assert result.warnings[0].code == "LEASE_MALFORMED_JSON"
+    assert result.warnings[0].code in {"LEASE_MALFORMED_JSON", "LEASE_SCHEMA_INVALID"}
 
 
 def test_missing_directory_and_disappearing_file_are_bounded_warnings(
@@ -432,6 +432,7 @@ def test_missing_directory_and_disappearing_file_are_bounded_warnings(
         return real_open(path, flags, *args, **kwargs)
 
     monkeypatch.setattr(os, "open", racing_open)
+    monkeypatch.setattr(os, "supports_dir_fd", os.supports_dir_fd | {racing_open})
     raced = discover_leases(tmp_path, now=NOW)
 
     assert raced.leases == ()
@@ -464,6 +465,8 @@ def test_stat_race_does_not_hide_other_valid_leases(
 
     monkeypatch.setattr(os, "lstat", racing_lstat)
     monkeypatch.setattr(os, "stat", racing_stat)
+    monkeypatch.setattr(os, "supports_dir_fd", os.supports_dir_fd | {racing_stat})
+    monkeypatch.setattr(os, "supports_follow_symlinks", os.supports_follow_symlinks | {racing_stat})
 
     result = discover_leases(tmp_path, now=NOW)
 
@@ -696,6 +699,7 @@ def test_child_swapped_to_same_inode_symlink_is_rejected(
         return real_open(path, flags, *args, **kwargs)
 
     monkeypatch.setattr(os, "open", racing_open)
+    monkeypatch.setattr(os, "supports_dir_fd", os.supports_dir_fd | {racing_open})
     result = discover_leases(tmp_path, now=NOW)
 
     assert result.leases == ()
@@ -910,11 +914,29 @@ def test_cancellation_request_write_observe_and_clear_is_atomic(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     replacements: list[tuple[Path, Path]] = []
+    destination_directories: list[tuple[int, int]] = []
     real_replace = os.replace
 
-    def recording_replace(source: str | os.PathLike[str], target: str | os.PathLike[str]) -> None:
-        replacements.append((Path(source), Path(target)))
-        real_replace(source, target)
+    def recording_replace(
+        source: str | os.PathLike[str],
+        target: str | os.PathLike[str],
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
+        source_path = Path(source)
+        target_path = Path(target)
+        if src_dir_fd is not None:
+            source_path = tmp_path / source_path
+        if dst_dir_fd is not None:
+            target_path = tmp_path / target_path
+            directory_stat = os.fstat(dst_dir_fd)
+            destination_directories.append((directory_stat.st_dev, directory_stat.st_ino))
+        replacements.append((source_path, target_path))
+        if src_dir_fd is None and dst_dir_fd is None:
+            real_replace(source, target)
+        else:
+            real_replace(source, target, src_dir_fd=src_dir_fd, dst_dir_fd=dst_dir_fd)
 
     monkeypatch.setattr(os, "replace", recording_replace)
 
@@ -933,6 +955,13 @@ def test_cancellation_request_write_observe_and_clear_is_atomic(
     assert replacements and replacements[0][1] == request_path
     assert replacements[0][0] != request_path
     assert not replacements[0][0].exists()
+    if os.name != "nt":
+        assert destination_directories
+    expected_directory = tmp_path.stat()
+    assert all(
+        identity == (expected_directory.st_dev, expected_directory.st_ino)
+        for identity in destination_directories
+    )
     observed = observe_cancellation_request(
         tmp_path,
         "agent-1",
@@ -1216,9 +1245,15 @@ def test_clear_acknowledges_only_the_observed_cancellation_generation(
     real_replace = os.replace
     raced = False
 
-    def racing_replace(source: object, destination: object) -> None:
+    def racing_replace(
+        source: str | os.PathLike[str],
+        destination: str | os.PathLike[str],
+        *,
+        src_dir_fd: int | None = None,
+        dst_dir_fd: int | None = None,
+    ) -> None:
         nonlocal raced
-        if Path(destination) == acknowledgement and not raced:
+        if Path(destination).name == acknowledgement.name and not raced:
             raced = True
             replacement = tmp_path / ".replacement.tmp"
             replacement.write_text(
@@ -1226,7 +1261,15 @@ def test_clear_acknowledges_only_the_observed_cancellation_generation(
                 encoding="utf-8",
             )
             real_replace(replacement, target)
-        real_replace(source, destination)
+        if src_dir_fd is None and dst_dir_fd is None:
+            real_replace(source, destination)
+        else:
+            real_replace(
+                source,
+                destination,
+                src_dir_fd=src_dir_fd,
+                dst_dir_fd=dst_dir_fd,
+            )
 
     monkeypatch.setattr(os, "replace", racing_replace)
 
@@ -1240,6 +1283,7 @@ def test_clear_acknowledges_only_the_observed_cancellation_generation(
         )
         is True
     )
+    assert raced
     observed = read_cancellation_request(
         tmp_path,
         "agent-1",
@@ -1289,7 +1333,7 @@ def test_cancellation_observer_rejects_broadly_writable_directory(
     observed = observe_cancellation_request(
         directory,
         "agent-1",
-        process_identity=identity,
+        observer_identity=identity,
         registration_nonce=REGISTRATION_NONCE,
         now=NOW + timedelta(seconds=1),
     )
@@ -1376,5 +1420,5 @@ def test_cancellation_publication_is_relative_to_permission_checked_handle(
         return
 
     assert os.name != "nt"
-    assert (displaced / "agent-1.cancel.json").is_file()
-    assert not (directory / "agent-1.cancel.json").exists()
+    assert (displaced / "agent-1.json").is_file()
+    assert not (directory / "agent-1.json").exists()

@@ -25,7 +25,7 @@ jobs:
         os:
           - ubuntu-24.04
           - windows-2025
-          - macos-14
+          - macos-15
     steps:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -64,7 +64,7 @@ jobs:
           ZK_DISPOSABLE_WINDOWS_PROFILE: '1'
         run: |
           if ($env:RUNNER_ENVIRONMENT -ne 'github-hosted') { throw 'Full Windows verification requires a disposable GitHub-hosted runner.' }
-          pwsh -NoProfile -File scripts/verify.ps1
+          pnpm verify
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Verify Rust
         if: runner.os != 'Windows'

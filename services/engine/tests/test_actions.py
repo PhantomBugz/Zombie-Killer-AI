@@ -10,6 +10,7 @@ import signal
 import sqlite3
 import subprocess
 import sys
+import sysconfig
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -76,10 +77,10 @@ LONG_WINDOWS_EXECUTABLE = "c:\\" + "a" * 4_100 + r"\python.exe"
 def fixture_python_environment() -> tuple[str, dict[str, str]]:
     executable = str(getattr(sys, "_base_executable", sys.executable))
     environment = os.environ.copy()
-    site_packages = Path(sys.prefix) / "Lib" / "site-packages"
+    site_packages = sysconfig.get_paths()["purelib"]
     existing = environment.get("PYTHONPATH")
     environment["PYTHONPATH"] = (
-        str(site_packages) if not existing else str(site_packages) + os.pathsep + existing
+        site_packages if not existing else site_packages + os.pathsep + existing
     )
     return executable, environment
 
@@ -1628,14 +1629,16 @@ def test_request_stop_pid_swap_inside_publication_is_not_consumable(
     def swap_during_publish(
         source: str | os.PathLike[str],
         target: str | os.PathLike[str],
+        *args: object,
+        **kwargs: object,
     ) -> None:
         nonlocal swapped
-        if Path(target) == destination and not swapped:
+        if Path(target).name == destination.name and not swapped:
             swapped = True
             controller.target = controller.target.model_copy(
                 update={"create_time": controller.target.create_time + 1}
             )
-        real_replace(source, target)
+        real_replace(source, target, *args, **kwargs)  # type: ignore[arg-type]
 
     monkeypatch.setattr(os, "replace", swap_during_publish)
 
@@ -1645,6 +1648,7 @@ def test_request_stop_pid_swap_inside_publication_is_not_consumable(
         grace_period_seconds=0,
     )
 
+    assert swapped
     assert receipt.result is ActionResult.INTERRUPTED
     assert receipt.action_issued is None
     assert controller.terminate_calls == []
@@ -1980,7 +1984,7 @@ def test_real_cooperative_fixture_stops_only_selected_same_name_process(
         )
 
         assert receipt.result is ActionResult.COMPLETED
-        target.wait(timeout=3)
+        assert target.wait(timeout=3) == 0
         assert sibling.poll() is None
         assert not cancellation_path(app_paths, sibling_agent).exists()
         assert cancellation_path(app_paths, target_agent).with_suffix(".cleared").exists()

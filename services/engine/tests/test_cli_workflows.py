@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -470,7 +471,7 @@ def test_cleanup_cli_requires_a_declaration_digest_even_with_a_valid_index() -> 
     result = runner.invoke(app, ["quarantine", "plan", "agent-1", "--resource-index", "3"])
 
     assert result.exit_code == 2
-    assert "--declaration-digest" in result.output
+    assert "--declaration-digest" in re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.output)
     assert observed == []
 
 

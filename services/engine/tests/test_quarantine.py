@@ -1569,6 +1569,7 @@ def test_graveyard_destination_junction_swap_is_rejected_before_move(tmp_path: P
             paths.graveyard_dir.rmdir()
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows destination reparse check")
 def test_destination_redirect_check_is_repeated_after_final_hook(tmp_path: Path) -> None:
     clock = MutableClock()
     paths, store, _, cleanup_plan, _, target = plan_file(tmp_path, clock=clock)
@@ -1909,13 +1910,16 @@ def test_posix_post_move_inventory_mismatch_stays_quarantined(
     assert entry is not None
     assert entry.state is QuarantineState.INTERRUPTED
     assert (Path(entry.quarantine_path) / "nested.txt").read_text() == ("concurrent-change")
-    failed_restore = QuarantineExecutor(
-        store,
-        paths,
-        actor="test",
-        clock=clock,
-    ).restore(entry.entry_id)
-    assert failed_restore.result is QuarantineResult.FAILED
+    with pytest.raises(PlanClaimError, match="not restoreable"):
+        QuarantineExecutor(
+            store,
+            paths,
+            actor="test",
+            clock=clock,
+        ).restore(entry.entry_id)
+    assert not target.exists()
+    assert store.get_quarantine_entry(entry.entry_id) == entry
+    assert (Path(entry.quarantine_path) / "nested.txt").read_text() == "concurrent-change"
 
 
 @pytest.mark.skipif(os.name == "nt", reason="POSIX rename behavior is platform-specific")

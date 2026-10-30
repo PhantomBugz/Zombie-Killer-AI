@@ -231,6 +231,8 @@ def _restrict_windows_database_file(path: Path) -> None:
         ctypes.c_ulong,
         ctypes.POINTER(ctypes.c_void_p),
     )
+    advapi32.EqualSid.argtypes = (ctypes.c_void_p, ctypes.c_void_p)
+    advapi32.EqualSid.restype = ctypes.c_int
     advapi32.GetKernelObjectSecurity.argtypes = (
         ctypes.c_void_p,
         ctypes.c_ulong,

@@ -177,6 +177,8 @@ class WindowsPermissionBackend:
             ctypes.c_ulong,
             ctypes.POINTER(ctypes.c_ulong),
         )
+        advapi32.EqualSid.argtypes = (ctypes.c_void_p, ctypes.c_void_p)
+        advapi32.EqualSid.restype = ctypes.c_int
         token = ctypes.c_void_p()
         if not advapi32.OpenProcessToken(
             kernel32.GetCurrentProcess(),

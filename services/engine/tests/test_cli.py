@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 import subprocess
 import sys
@@ -434,7 +435,7 @@ def test_action_plan_requires_both_reviewed_identity_fields_before_dispatch(
 
     assert result.exit_code == 2
     assert calls == 0
-    assert missing_option in result.stderr
+    assert missing_option in re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", result.stderr)
 
 
 @pytest.mark.parametrize(

@@ -50,7 +50,7 @@ jobs:
         os:
           - ubuntu-24.04
           - windows-2025
-          - macos-14
+          - macos-15
         python:
           - "3.11"
           - "3.12"
@@ -92,7 +92,7 @@ jobs:
         os:
           - ubuntu-24.04
           - windows-2025
-          - macos-14
+          - macos-15
     steps:
       - name: Check out source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

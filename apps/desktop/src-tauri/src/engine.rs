@@ -69,7 +69,9 @@ impl Drop for TestChildToContainmentDropDelay {
     }
 }
 
+// The separate Unix harness calls this hook; the desktop test target only compiles it.
 #[cfg(all(test, unix))]
+#[allow(dead_code)]
 pub(crate) fn arm_child_to_containment_drop_delay_for_test() {
     TEST_DELAY_CHILD_TO_CONTAINMENT_DROP.store(true, std::sync::atomic::Ordering::SeqCst);
 }

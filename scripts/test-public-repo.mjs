@@ -22,6 +22,7 @@ import {
 } from './secret-scan-lib.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const supportedRunnerMatrix = ['ubuntu-24.04', 'windows-2025', 'macos-15']
 
 const unixHarnessManifest = 'apps/desktop/src-tauri/build_support/unix-test-harness/Cargo.toml'
 const unixHarnessCommands = [
@@ -34,7 +35,7 @@ function assertNativeUnixHarnessPolicy(text) {
   const workflow = parse(text)
   assert.deepEqual(
     workflow?.jobs?.native?.strategy?.matrix?.os,
-    ['ubuntu-24.04', 'windows-2025', 'macos-14'],
+    supportedRunnerMatrix,
     'native-build.yml must retain the Linux, Windows, and macOS runner matrix',
   )
   const steps = workflow?.jobs?.native?.steps
@@ -65,7 +66,8 @@ function assertHostedWindowsSourceGatePolicy(text) {
   assert.equal(gate.shell, 'pwsh')
   assert.equal(gate.env?.ZK_DISPOSABLE_WINDOWS_PROFILE, '1')
   assert.match(gate.run, /\$env:RUNNER_ENVIRONMENT -ne 'github-hosted'/u)
-  assert.match(gate.run, /pwsh -NoProfile -File scripts\/verify\.ps1/u)
+  assert.match(gate.run, /(?:^|\n)\s*pnpm verify(?:\r?\n|$)/u, 'Windows gate must invoke verifier through pnpm')
+  assert.doesNotMatch(gate.run, /pwsh -NoProfile -File scripts\/verify\.ps1/u)
   assert.match(gate.run, /if \(\$LASTEXITCODE -ne 0\) \{ exit \$LASTEXITCODE \}/u)
   assert.doesNotMatch(gate.run, /-Skip[A-Za-z]+|-AllowDirty/u)
   assert.ok(position('Install exact dependencies') < position(gate.name))
@@ -127,8 +129,21 @@ function assertCargoDependabotPolicy(text) {
 }
 
 assert.equal(PUBLIC_VERSION, '0.1.0-alpha.1')
+const packageManifest = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'))
+assert.equal(
+  packageManifest.scripts?.verify,
+  'pwsh -NoProfile -File scripts/verify.ps1',
+  'pnpm verify must delegate to the exact unskipped source gate',
+)
 
 const ciWorkflow = readFileSync(path.join(root, '.github/workflows/ci.yml'), 'utf8')
+for (const job of ['python', 'frontend']) {
+  assert.deepEqual(
+    parse(ciWorkflow)?.jobs?.[job]?.strategy?.matrix?.os,
+    supportedRunnerMatrix,
+    `CI ${job} must retain supported Linux, Windows, and macOS runners`,
+  )
+}
 assert.match(ciWorkflow, /pytest services\/engine\/tests packages\/sdk-python\/tests packages\/protocol\/tests scripts\/tests -q/u)
 assert.match(ciWorkflow, /ruff check services\/engine packages\/sdk-python packages\/protocol\/tests scripts/u)
 assert.match(ciWorkflow, /mypy services\/engine\/src packages\/sdk-python\/src scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py scripts\/tests/u)
@@ -153,8 +168,24 @@ assert.throws(
   /excluded only on Windows/u,
 )
 assert.throws(
-  () => assertNativeUnixHarnessPolicy(nativeWorkflow.replace('          - macos-14\n', '')),
+  () => assertNativeUnixHarnessPolicy(nativeWorkflow.replace('          - macos-15\n', '')),
   /Linux, Windows, and macOS runner matrix/u,
+)
+
+const codeqlJob = parse(readFileSync(path.join(root, '.github/workflows/codeql.yml'), 'utf8'))?.jobs?.analyze
+assert.equal(
+  codeqlJob?.if,
+  'github.event.repository.private == false',
+  'CodeQL must wait for public repository visibility when private code scanning is unavailable',
+)
+assert.equal(codeqlJob?.permissions?.actions, 'read', 'CodeQL must read workflow-run metadata')
+assert.equal(codeqlJob?.permissions?.['security-events'], 'write', 'CodeQL must upload public code scanning results')
+
+const dependencyReviewJob = parse(readFileSync(path.join(root, '.github/workflows/dependency-review.yml'), 'utf8'))?.jobs?.review
+assert.equal(
+  dependencyReviewJob?.if,
+  'github.event.repository.private == false',
+  'Dependency review must wait for public repository visibility when private dependency review is unavailable',
 )
 
 const dependabot = readFileSync(path.join(root, '.github/dependabot.yml'), 'utf8')
