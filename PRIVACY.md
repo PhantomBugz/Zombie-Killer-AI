@@ -19,6 +19,8 @@ The engine does not read process environments. The SDK does not collect prompts,
 | macOS | `~/Library/Application Support/Zombie Killer` | same directory | `~/Library/Application Support/Zombie Killer/runtime` |
 | Linux | `~/.local/share/Zombie Killer` | `~/.local/state/Zombie Killer` | private `/run/user/<uid>/Zombie Killer` when verified, otherwise `~/.local/state/Zombie Killer/runtime` |
 
+The macOS path describes experimental source behavior; this alpha does not qualify a macOS native release or mutation workflow.
+
 The application derives locations from OS identity APIs rather than environment variables. It attempts current-user-only permissions and reports preparation failures. Backups are below the data directory; quarantined resources are below `graveyard`; leases and cancellation requests are below the runtime directory. The SQLite audit store is below the state directory.
 
 ## Retention and deletion

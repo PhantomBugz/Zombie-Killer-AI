@@ -18,13 +18,13 @@ Zombie Killer follows evidence and safety gates, not calendar promises. Items be
 - Keep the verified identity-bound CLI containment path covered by PID-reuse, target-changed, and clean-machine release regression tests.
 - Keep completed service/broker/desktop/CLI workflows covered by separate-instance and interruption regressions.
 - Verify supported local stores and declared resources with synthetic fixtures before using important workloads; maintain independent backups.
-- Expand Windows, macOS, and Linux fixture coverage for permission failures, process trees, mounts, junctions, and service supervisors.
+- Expand Windows and Linux fixture coverage for permission failures, process trees, mounts, junctions, and service supervisors. Port and qualify macOS native workflows separately before offering macOS artifacts.
 - Reconcile interrupted operations at startup and expose clearer degraded-coverage diagnostics.
 - Review complete platform binary third-party obligations, compare lock/source and manifest-bound binary SBOMs, and run clean-machine installation tests. The bundled Python legal inventory is attribution evidence, not complete native binary legal approval.
 
 ## Beta candidates
 
-- Signed Windows packages and macOS signing/notarization after maintainers control suitable certificates.
+- Signed Windows packages after maintainers control suitable certificates. Any later macOS distribution requires native qualification, signing, and notarization.
 - Opt-in adapters for additional local memory formats through a documented capability contract.
 - Language-neutral lifecycle SDKs and supervisor integrations.
 - Locally configurable retention/purge workflows with dry-run reports and recoverability windows.

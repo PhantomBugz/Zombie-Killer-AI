@@ -39,7 +39,7 @@ Restore is also a planned mutation. It validates snapshot size/hash, current sou
 
 Pause external writers before editing or restoring JSON/JSONL. The application holds its persistent sidecar lock and rechecks revision and identity immediately before replacement, but an OS rename is not compare-and-swap against arbitrary writers that ignore that lock. Use only cooperating writers or a quiescent source; this limit applies on Windows and POSIX.
 
-SQLite transactions exclude ordinary SQLite connection writers during the write transaction, including supported DELETE and WAL modes. This does not authorize out-of-band file replacement or promise coordination with arbitrary filesystem writers. The UI exposes only the capabilities reported by the current adapter. Windows working-tree checks do not establish clean-machine or macOS/Linux release approval; see [release verification](release-verification.md).
+SQLite transactions exclude ordinary SQLite connection writers during the write transaction, including supported DELETE and WAL modes. This does not authorize out-of-band file replacement or promise coordination with arbitrary filesystem writers. The UI exposes only the capabilities reported by the current adapter. Windows working-tree checks do not establish clean-machine or Linux release approval. macOS native operation is outside this alpha's qualified scope; see [release verification](release-verification.md).
 
 ## Backups and retention
 
