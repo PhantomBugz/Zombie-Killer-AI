@@ -1,0 +1,7 @@
+# Initial review routing. Verify @PhantomBugz after repository creation; see MAINTAINERS.md.
+* @PhantomBugz
+
+/.github/ @PhantomBugz
+/apps/desktop/src-tauri/ @PhantomBugz
+/services/engine/ @PhantomBugz
+/SECURITY.md @PhantomBugz

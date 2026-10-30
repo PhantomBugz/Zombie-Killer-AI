@@ -1,0 +1,44 @@
+{
+  "name": "zombie-killer",
+  "version": "0.1.0-alpha.1",
+  "description": "Local-first containment console for Agentic AI processes and supported local memory stores",
+  "private": true,
+  "license": "Apache-2.0",
+  "author": {
+    "name": "PhantomBugz",
+    "url": "https://PhantomBugz.com"
+  },
+  "homepage": "https://github.com/PhantomBugz/Zombie-Killer-AI#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhantomBugz/Zombie-Killer-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PhantomBugz/Zombie-Killer-AI/issues"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.33.2",
+  "engines": {
+    "node": "24.18.0",
+    "pnpm": "10.33.2"
+  },
+  "scripts": {
+    "preinstall": "node scripts/check-toolchain.mjs",
+    "toolchain:check": "node scripts/check-toolchain.mjs",
+    "lint": "node scripts/run-workspace-gate.mjs lint",
+    "test:workspace": "node scripts/test-workspace-guards.mjs",
+    "test:docs": "node scripts/test-public-repo.mjs && node scripts/test-secret-scan.mjs && node scripts/test-gitleaks.mjs && node scripts/test-sbom.mjs",
+    "lint:docs": "node scripts/check-public-repo.mjs",
+    "secret:scan": "node scripts/secret-scan.mjs --tracked --history",
+    "sbom": "node scripts/generate-sbom.mjs",
+    "test": "pnpm run test:workspace && node scripts/run-workspace-gate.mjs test",
+    "typecheck": "pnpm run typecheck:protocol && node scripts/run-workspace-gate.mjs typecheck",
+    "typecheck:protocol": "pnpm --dir apps/desktop exec tsc -p ../../packages/protocol/tsconfig.json",
+    "build": "node scripts/run-workspace-gate.mjs build",
+    "verify:web": "pnpm run toolchain:check && pnpm run lint:docs && pnpm run lint && pnpm run typecheck && pnpm run test:docs && pnpm run test && pnpm run build",
+    "verify": "pwsh -NoProfile -File scripts/verify.ps1"
+  },
+  "devDependencies": {
+    "yaml": "2.8.1"
+  }
+}

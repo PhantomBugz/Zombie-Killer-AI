@@ -1,0 +1,47 @@
+[project]
+name = "zombie-killer-workspace"
+version = "0.1.0a1"
+description = "Local-first agent lifecycle recovery workspace"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "PhantomBugz" }]
+dependencies = ["zombie-killer-engine", "zombie-killer-sdk"]
+
+[project.urls]
+Homepage = "https://PhantomBugz.com"
+Documentation = "https://github.com/PhantomBugz/Zombie-Killer-AI#readme"
+Source = "https://github.com/PhantomBugz/Zombie-Killer-AI"
+Issues = "https://github.com/PhantomBugz/Zombie-Killer-AI/issues"
+
+[dependency-groups]
+dev = [
+  "jsonschema==4.25.1",
+  "mypy==2.3.0",
+  "pyinstaller==6.18.0",
+  "pytest==9.1.1",
+  "ruff==0.16.2",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+zombie-killer-engine = { workspace = true }
+zombie-killer-sdk = { workspace = true }
+
+[tool.uv.workspace]
+members = ["services/engine", "packages/sdk-python"]
+
+[tool.ruff]
+line-length = 100
+src = ["services/engine/src", "packages/sdk-python/src"]
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "SIM", "UP"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = "services/engine/src;packages/sdk-python/src"

@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If Zombie Killer helps your work, cite this source version."
+title: "Zombie Killer"
+type: software
+version: 0.1.0-alpha.1
+abstract: "A local-first containment console for Agentic AI processes and supported local memory stores."
+authors:
+  - name: PhantomBugz
+    website: "https://PhantomBugz.com"
+license: Apache-2.0
+repository-code: "https://github.com/PhantomBugz/Zombie-Killer-AI"
+url: "https://PhantomBugz.com"
+keywords:
+  - agentic-ai
+  - process-management
+  - local-first
+  - memory-vault

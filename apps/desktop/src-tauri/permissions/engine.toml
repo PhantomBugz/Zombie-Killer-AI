@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-engine-request"
+description = "Allows the main Zombie Killer window to send typed requests to the fixed local engine broker."
+commands.allow = ["engine_request"]

@@ -1,0 +1,63 @@
+:root {
+  color-scheme: dark;
+  --color-canvas: #0a0e0d;
+  --color-surface: #111715;
+  --color-elevated: #17201d;
+  --color-text: #eaf2ee;
+  --color-muted: #a0b3aa;
+  --color-boundary: #52685f;
+  --color-phosphor: #58d9b0;
+  --color-on-accent: #07110e;
+  --color-success: #6ad38b;
+  --color-warning: #f0c35a;
+  --color-danger: #ff786e;
+  --color-memory: #b99cf6;
+  --color-focus: #8be8c9;
+  --color-overlay: rgb(5 10 8 / 72%);
+  --font-sans: 'IBM Plex Sans', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Cascadia Mono', 'SFMono-Regular', Consolas, 'Liberation Mono',
+    monospace;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --nav-width: 232px;
+  font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --color-canvas: #f1f0e9;
+  --color-surface: #faf9f4;
+  --color-elevated: #e6ece7;
+  --color-text: #17211d;
+  --color-muted: #52635b;
+  --color-boundary: #81958b;
+  --color-phosphor: #087659;
+  --color-on-accent: #ffffff;
+  --color-success: #287541;
+  --color-warning: #765907;
+  --color-danger: #aa3933;
+  --color-memory: #6645a2;
+  --color-focus: #07694f;
+  --color-overlay: rgb(28 38 33 / 42%);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    color-scheme: light;
+    --color-canvas: #f1f0e9;
+    --color-surface: #faf9f4;
+    --color-elevated: #e6ece7;
+    --color-text: #17211d;
+    --color-muted: #52635b;
+    --color-boundary: #81958b;
+    --color-phosphor: #087659;
+    --color-on-accent: #ffffff;
+    --color-success: #287541;
+    --color-warning: #765907;
+    --color-danger: #aa3933;
+    --color-memory: #6645a2;
+    --color-focus: #07694f;
+    --color-overlay: rgb(28 38 33 / 42%);
+  }
+}

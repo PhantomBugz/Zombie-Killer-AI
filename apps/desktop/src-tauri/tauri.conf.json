@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Zombie Killer",
+  "version": "0.1.0-alpha.1",
+  "identifier": "com.phantombugz.zombiekiller",
+  "build": {
+    "beforeDevCommand": "pnpm dev --host 127.0.0.1 --port 1420",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "pnpm native:prepare",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Zombie Killer",
+        "url": "index.html",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 920,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false,
+        "maximized": false,
+        "visible": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' customprotocol: asset:; connect-src ipc: http://ipc.localhost; font-src 'self'; img-src 'self' data: asset: http://asset.localhost; style-src 'self'; script-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'",
+      "devCsp": "default-src 'self'; connect-src ipc: http://ipc.localhost http://127.0.0.1:1420 ws://127.0.0.1:1420; font-src 'self'; img-src 'self' data:; style-src 'self' 'nonce-WktEZXZOb25jZVYxMjAyNjA4MTM'; script-src 'self' 'nonce-WktEZXZOb25jZVYxMjAyNjA4MTM'; object-src 'none'; base-uri 'none'; frame-src 'none'; form-action 'none'",
+      "freezePrototype": true,
+      "capabilities": ["main-capability"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "publisher": "PhantomBugz",
+    "copyright": "Copyright 2026 PhantomBugz",
+    "category": "DeveloperTool",
+    "shortDescription": "Local-first Agentic AI lifecycle console",
+    "longDescription": "Inspect evidence, review PID-safe containment, and audit supported local memory sources without telemetry.",
+    "resources": {
+      "resources/engine/": "engine/"
+    },
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ]
+  }
+}

@@ -1,0 +1,588 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zombie-killer.local/schema/protocol-1.0.json",
+  "title": "Zombie Killer local engine protocol",
+  "oneOf": [
+    { "$ref": "#/$defs/request" },
+    { "$ref": "#/$defs/response" }
+  ],
+  "$defs": {
+    "protocolVersion": { "type": "string", "const": "1.0" },
+    "method": {
+      "type": "string",
+      "enum": [
+        "system.info",
+        "doctor",
+        "scan.list",
+        "agent.detail",
+        "action.plan",
+        "action.execute",
+        "activity.list",
+        "receipt.get",
+        "quarantine.list",
+        "quarantine.resource-list",
+        "quarantine.plan",
+        "quarantine.execute",
+        "quarantine.restore-plan",
+        "quarantine.restore-execute",
+        "vault.list",
+        "vault.register",
+        "vault.probe",
+        "vault.query",
+        "vault.get",
+        "vault.mutation.plan",
+        "vault.mutation.execute",
+        "vault.snapshot.list",
+        "vault.restore.plan",
+        "vault.restore.execute",
+        "settings.get",
+        "settings.update",
+        "diagnostics.export-plan",
+        "diagnostics.export-execute"
+      ]
+    },
+    "emptyPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "maxProperties": 0
+    },
+    "identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "pattern": "^\\S(?:.*\\S)?$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "localPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "pattern": "^\\S(?:.*\\S)?$",
+      "description": "A path selected by the local operator. It is accepted only by named path-selection methods and is never a generic filesystem primitive."
+    },
+    "pagePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cursor": { "type": ["string", "null"], "maxLength": 256 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 }
+      }
+    },
+    "scanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "include_unmanaged": { "type": "boolean", "default": true },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 1000, "default": 500 }
+      }
+    },
+    "agentPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id"],
+      "properties": {
+        "agent_id": { "$ref": "#/$defs/identifier" },
+        "expected_pid": { "type": "integer", "minimum": 1 },
+        "expected_process_instance_id": { "$ref": "#/$defs/digest" }
+      },
+      "allOf": [
+        { "if": { "required": ["expected_pid"] }, "then": { "required": ["expected_process_instance_id"] } },
+        { "if": { "required": ["expected_process_instance_id"] }, "then": { "required": ["expected_pid"] } }
+      ]
+    },
+    "actionTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pid", "process_instance_id"],
+      "properties": {
+        "pid": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+        "process_instance_id": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "actionPlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "mode", "target"],
+      "properties": {
+        "agent_id": { "$ref": "#/$defs/identifier" },
+        "mode": { "enum": ["request_stop", "terminate", "kill"] },
+        "target": { "$ref": "#/$defs/actionTarget" }
+      }
+    },
+    "executePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_id", "digest"],
+      "properties": {
+        "plan_id": { "$ref": "#/$defs/identifier" },
+        "digest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "receiptPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["receipt_id"],
+      "properties": { "receipt_id": { "$ref": "#/$defs/identifier" } }
+    },
+    "restoreEntryPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entry_id"],
+      "properties": { "entry_id": { "$ref": "#/$defs/identifier" } }
+    },
+    "cleanupResourceListPayload": {
+      "$ref": "#/$defs/agentPayload"
+    },
+    "cleanupPlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "resource_index", "expected_declaration_digest"],
+      "properties": {
+        "agent_id": { "$ref": "#/$defs/identifier" },
+        "resource_index": { "type": "integer", "minimum": 0, "maximum": 63 },
+        "expected_declaration_digest": { "$ref": "#/$defs/digest" },
+        "expected_pid": { "type": "integer", "minimum": 1 },
+        "expected_process_instance_id": { "$ref": "#/$defs/digest" }
+      },
+      "allOf": [
+        { "if": { "required": ["expected_pid"] }, "then": { "required": ["expected_process_instance_id"] } },
+        { "if": { "required": ["expected_process_instance_id"] }, "then": { "required": ["expected_pid"] } }
+      ]
+    },
+    "vaultPathPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": { "path": { "$ref": "#/$defs/localPath" } }
+    },
+    "vaultQueryPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "namespace": { "anyOf": [{ "$ref": "#/$defs/identifier" }, { "type": "null" }] },
+        "text": { "type": ["string", "null"], "maxLength": 1024 },
+        "cursor": { "type": ["string", "null"], "maxLength": 256 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 }
+      }
+    },
+    "vaultGetPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "record_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "record_id": { "$ref": "#/$defs/identifier" }
+      }
+    },
+    "vaultMutationPlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "expected_revision", "operation", "record_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "expected_revision": { "$ref": "#/$defs/digest" },
+        "operation": {
+          "enum": ["update_content", "update_field", "update_metadata", "exclude_from_retrieval", "quarantine", "restore_record"]
+        },
+        "record_id": { "$ref": "#/$defs/identifier" },
+        "field": { "anyOf": [{ "$ref": "#/$defs/identifier" }, { "type": "null" }] },
+        "metadata_key": { "anyOf": [{ "$ref": "#/$defs/identifier" }, { "type": "null" }] },
+        "value": { "type": ["string", "integer", "number", "boolean", "null"], "maxLength": 65536 }
+      }
+    },
+    "snapshotListPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 500, "default": 100 }
+      }
+    },
+    "vaultRestorePlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "snapshot_id", "snapshot_digest", "expected_revision"],
+      "properties": {
+        "source_id": { "$ref": "#/$defs/identifier" },
+        "snapshot_id": { "$ref": "#/$defs/identifier" },
+        "snapshot_digest": { "$ref": "#/$defs/digest" },
+        "expected_revision": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "settingsUpdatePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected_revision"],
+      "minProperties": 2,
+      "properties": {
+        "expected_revision": { "type": "integer", "minimum": 0 },
+        "scan_interval_seconds": { "type": "integer", "minimum": 5, "maximum": 3600 },
+        "heartbeat_grace_seconds": { "type": "integer", "minimum": 10, "maximum": 86400 },
+        "retention_days": { "type": "integer", "minimum": 1, "maximum": 365 },
+        "include_unmanaged_candidates": { "type": "boolean" },
+        "appearance": { "enum": ["system", "light", "dark"] },
+        "reduced_motion": { "type": "boolean" }
+      }
+    },
+    "diagnosticsPlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["destination"],
+      "properties": {
+        "destination": { "$ref": "#/$defs/localPath" },
+        "include_receipts": { "type": "boolean", "default": true },
+        "include_settings": { "type": "boolean", "default": true }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol_version", "request_id", "method", "payload"],
+      "properties": {
+        "protocol_version": { "$ref": "#/$defs/protocolVersion" },
+        "request_id": { "type": "string", "format": "uuid" },
+        "method": { "$ref": "#/$defs/method" },
+        "payload": { "type": "object" }
+      },
+      "allOf": [
+        { "if": { "properties": { "method": { "const": "system.info" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/emptyPayload" } } } },
+        { "if": { "properties": { "method": { "const": "doctor" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/emptyPayload" } } } },
+        { "if": { "properties": { "method": { "const": "scan.list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/scanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "agent.detail" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/agentPayload" } } } },
+        { "if": { "properties": { "method": { "const": "action.plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/actionPlanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "action.execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } },
+        { "if": { "properties": { "method": { "const": "activity.list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/pagePayload" } } } },
+        { "if": { "properties": { "method": { "const": "receipt.get" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/receiptPayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/pagePayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.resource-list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/cleanupResourceListPayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/cleanupPlanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.restore-plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/restoreEntryPayload" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.restore-execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/pagePayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.register" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultPathPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.probe" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultPathPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.query" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultQueryPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.get" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultGetPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.mutation.plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultMutationPlanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.mutation.execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.snapshot.list" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/snapshotListPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.restore.plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/vaultRestorePlanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "vault.restore.execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } },
+        { "if": { "properties": { "method": { "const": "settings.get" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/emptyPayload" } } } },
+        { "if": { "properties": { "method": { "const": "settings.update" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/settingsUpdatePayload" } } } },
+        { "if": { "properties": { "method": { "const": "diagnostics.export-plan" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/diagnosticsPlanPayload" } } } },
+        { "if": { "properties": { "method": { "const": "diagnostics.export-execute" } } }, "then": { "properties": { "payload": { "$ref": "#/$defs/executePayload" } } } }
+      ]
+    },
+    "safeValue": {
+      "description": "A bounded result value whose concrete shape is selected by the request method.",
+      "oneOf": [
+        { "type": ["string", "number", "integer", "boolean", "null"] },
+        { "type": "array", "maxItems": 10000, "items": { "$ref": "#/$defs/safeValue" } },
+        { "type": "object", "maxProperties": 10000, "additionalProperties": { "$ref": "#/$defs/safeValue" } }
+      ]
+    },
+    "agentState": {
+      "enum": ["healthy", "idle", "stale", "orphaned", "unresponsive", "unmanaged", "interrupted", "defunct", "completed", "failed", "cancelled", "unknown"]
+    },
+    "evidenceGrade": {
+      "enum": ["confirmed", "strong", "partial", "signature_only", "insufficient"]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "grade", "observed_at", "detail"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "grade": { "$ref": "#/$defs/evidenceGrade" },
+        "observed_at": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "detail": { "type": "string", "minLength": 1, "maxLength": 2048 }
+      }
+    },
+    "usageCost": {
+      "description": "Provider cost availability. Unknown cost has a null amount and must never be guessed as zero.",
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["availability", "amount_usd", "note"], "properties": { "availability": { "const": "known" }, "amount_usd": { "type": "number", "minimum": 0 }, "note": { "type": "string", "minLength": 1, "maxLength": 512 } } },
+        { "type": "object", "additionalProperties": false, "required": ["availability", "amount_usd", "note"], "properties": { "availability": { "const": "unknown" }, "amount_usd": { "type": "null" }, "note": { "type": "string", "minLength": 1, "maxLength": 512 } } }
+      ]
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inspected_count", "denied_count", "vanished_count", "malformed_lease_count", "lease_file_count", "skipped_lease_count", "other_user_count", "unknown_owner_count", "identity_denied_count", "complete", "captured_at", "current_boot_id", "warnings"],
+      "properties": {
+        "inspected_count": { "type": "integer", "minimum": 0 },
+        "denied_count": { "type": "integer", "minimum": 0 },
+        "vanished_count": { "type": "integer", "minimum": 0 },
+        "malformed_lease_count": { "type": "integer", "minimum": 0 },
+        "lease_file_count": { "type": "integer", "minimum": 0 },
+        "skipped_lease_count": { "type": "integer", "minimum": 0 },
+        "other_user_count": { "type": "integer", "minimum": 0 },
+        "unknown_owner_count": { "type": "integer", "minimum": 0 },
+        "identity_denied_count": { "type": "integer", "minimum": 0 },
+        "complete": { "type": "boolean", "description": "False means partial visibility; absence is not proof of absence." },
+        "captured_at": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "current_boot_id": { "$ref": "#/$defs/identifier" },
+        "warnings": { "type": "array", "maxItems": 128, "items": { "type": "object", "additionalProperties": false, "required": ["code", "message"], "properties": { "code": { "type": "string", "minLength": 1, "maxLength": 128 }, "message": { "type": "string", "minLength": 1, "maxLength": 512 } } } }
+      }
+    },
+    "agentSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "provider", "project", "role", "state", "evidence_grade", "confidence", "reason_codes", "explanation", "evidence", "actionable", "managed", "pid", "process_instance_id", "process_name", "os_status", "usage_cost"],
+      "properties": {
+        "agent_id": { "type": ["string", "null"], "maxLength": 256 },
+        "provider": { "type": ["string", "null"], "maxLength": 256 },
+        "project": { "type": ["string", "null"], "maxLength": 256 },
+        "role": { "type": ["string", "null"], "maxLength": 256 },
+        "state": { "$ref": "#/$defs/agentState" },
+        "evidence_grade": { "$ref": "#/$defs/evidenceGrade" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "reason_codes": { "type": "array", "minItems": 1, "maxItems": 128, "items": { "type": "string", "minLength": 1, "maxLength": 128 } },
+        "explanation": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "evidence": { "type": "array", "minItems": 1, "maxItems": 128, "items": { "$ref": "#/$defs/evidence" } },
+        "actionable": { "type": "boolean" },
+        "managed": { "type": "boolean" },
+        "pid": { "type": ["integer", "null"], "minimum": 1 },
+        "process_instance_id": { "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }] },
+        "process_name": { "type": ["string", "null"], "maxLength": 256 },
+        "os_status": { "type": ["string", "null"], "maxLength": 64 },
+        "usage_cost": { "$ref": "#/$defs/usageCost" }
+      }
+    },
+    "systemInfoResult": {
+      "type": "object", "additionalProperties": false,
+      "required": ["engine_version", "protocol_version", "platform", "python", "local_only", "network_listener", "memory_warning"],
+      "properties": { "engine_version": { "type": "string" }, "protocol_version": { "$ref": "#/$defs/protocolVersion" }, "platform": { "type": "string" }, "python": { "type": "string" }, "local_only": { "const": true }, "network_listener": { "const": false }, "memory_warning": { "type": "string", "minLength": 1, "maxLength": 512 } }
+    },
+    "doctorResult": {
+      "type": "object", "additionalProperties": false, "required": ["healthy", "checks", "warnings"],
+      "properties": { "healthy": { "type": "boolean" }, "checks": { "type": "array", "maxItems": 128, "items": { "type": "object", "additionalProperties": false, "required": ["name", "ok"], "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 128 }, "ok": { "type": "boolean" } } } }, "warnings": { "type": "array", "maxItems": 128, "items": { "type": "string", "maxLength": 512 } } }
+    },
+    "scanResult": {
+      "type": "object", "additionalProperties": false, "required": ["agents", "coverage", "returned", "total"],
+      "properties": { "agents": { "type": "array", "maxItems": 1000, "items": { "$ref": "#/$defs/agentSummary" } }, "coverage": { "$ref": "#/$defs/coverage" }, "returned": { "type": "integer", "minimum": 0, "maximum": 1000 }, "total": { "type": "integer", "minimum": 0 } }
+    },
+    "planResult": {
+      "type": "object", "additionalProperties": false, "required": ["plan_id", "digest", "expires_at", "consequences", "warnings"],
+      "properties": { "plan_id": { "$ref": "#/$defs/identifier" }, "digest": { "$ref": "#/$defs/digest" }, "expires_at": { "type": "string", "minLength": 1, "maxLength": 64 }, "consequences": { "type": "array", "minItems": 1, "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "warnings": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } } }
+    },
+    "actionPlanResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_id", "digest", "expires_at", "consequences", "warnings", "target"],
+      "properties": {
+        "plan_id": { "$ref": "#/$defs/identifier" },
+        "digest": { "$ref": "#/$defs/digest" },
+        "expires_at": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "consequences": { "type": "array", "minItems": 1, "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } },
+        "warnings": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["pid", "process_instance_id", "state"],
+          "properties": {
+            "pid": { "type": "integer", "minimum": 1, "maximum": 4294967295 },
+            "process_instance_id": { "$ref": "#/$defs/digest" },
+            "state": { "$ref": "#/$defs/agentState" }
+          }
+        }
+      }
+    },
+    "partialFailures": {
+      "type": "array",
+      "maxItems": 64,
+      "items": { "type": "string", "minLength": 1, "maxLength": 2048 }
+    },
+    "receiptKind": {
+      "enum": ["process", "memory", "quarantine", "diagnostics"],
+      "default": "process"
+    },
+    "receiptResult": {
+      "description": "action_issued is true, false, or null when issuance is uncertain.",
+      "type": "object", "additionalProperties": false, "required": ["receipt_id", "plan_id", "outcome", "certainty", "action_issued", "partial_failures", "created_at"],
+      "properties": { "receipt_id": { "$ref": "#/$defs/identifier" }, "plan_id": { "$ref": "#/$defs/identifier" }, "outcome": { "type": "string", "minLength": 1, "maxLength": 128 }, "certainty": { "enum": ["verified", "failed_before_issue", "uncertain"] }, "action_issued": { "type": ["boolean", "null"] }, "partial_failures": { "$ref": "#/$defs/partialFailures" }, "created_at": { "type": "string", "minLength": 1, "maxLength": 64 }, "kind": { "$ref": "#/$defs/receiptKind" } }
+    },
+    "activityResult": { "type": "object", "additionalProperties": false, "required": ["receipts", "next_cursor"], "properties": { "receipts": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/receiptResult" } }, "next_cursor": { "type": ["string", "null"], "maxLength": 256 } } },
+    "quarantineListResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entries", "next_cursor"],
+      "properties": {
+        "entries": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["entry_id", "agent_id", "resource_type", "state", "restorable", "created_at", "updated_at"],
+            "properties": {
+              "entry_id": { "$ref": "#/$defs/identifier" },
+              "agent_id": { "$ref": "#/$defs/identifier" },
+              "resource_type": { "enum": ["file", "directory"] },
+              "state": { "enum": ["quarantined", "partial", "restoring", "restored", "interrupted"] },
+              "restorable": { "type": "boolean" },
+              "created_at": { "type": "string", "minLength": 1, "maxLength": 64 },
+              "updated_at": { "type": "string", "minLength": 1, "maxLength": 64 }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "required": ["state"],
+                  "properties": { "state": { "enum": ["partial", "restoring", "restored", "interrupted"] } }
+                },
+                "then": { "properties": { "restorable": { "const": false } } }
+              }
+            ]
+          }
+        },
+        "next_cursor": { "type": ["string", "null"], "maxLength": 256 }
+      }
+    },
+    "cleanupResourceListResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "resources", "returned"],
+      "properties": {
+        "agent_id": { "$ref": "#/$defs/identifier" },
+        "resources": {
+          "type": "array", "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["resource_index", "kind", "resource_type", "cleanup_available", "reason", "declaration_digest"],
+            "properties": {
+              "resource_index": { "type": "integer", "minimum": 0, "maximum": 63 },
+              "kind": { "const": "temporary" },
+              "resource_type": { "enum": ["file", "directory", "unknown"] },
+              "cleanup_available": { "type": "boolean" },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
+              "declaration_digest": { "$ref": "#/$defs/nullableDigest" }
+            }
+          }
+        },
+        "returned": { "type": "integer", "minimum": 0, "maximum": 64 }
+      }
+    },
+    "nullableIdentifier": { "anyOf": [{ "$ref": "#/$defs/identifier" }, { "type": "null" }], "default": null },
+    "nullableDigest": { "anyOf": [{ "$ref": "#/$defs/digest" }, { "type": "null" }], "default": null },
+    "vaultEditableField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "kind", "value_type", "value"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "enum": ["update_content", "update_field", "update_metadata"] },
+        "value_type": { "enum": ["string", "number", "boolean", "null"] },
+        "value": { "type": ["string", "number", "boolean", "null"], "maxLength": 65536 }
+      },
+      "oneOf": [
+        { "properties": { "value_type": { "const": "string" }, "value": { "type": "string" } } },
+        { "properties": { "value_type": { "const": "number" }, "value": { "type": "number" } } },
+        { "properties": { "value_type": { "const": "boolean" }, "value": { "type": "boolean" } } },
+        { "properties": { "value_type": { "const": "null" }, "value": { "type": "null" } } }
+      ]
+    },
+    "vaultDiff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field_name", "old_hash", "new_hash", "old_preview", "new_preview"],
+      "properties": {
+        "field_name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "old_hash": { "$ref": "#/$defs/digest" },
+        "new_hash": { "$ref": "#/$defs/digest" },
+        "old_preview": { "const": "[REDACTED]" },
+        "new_preview": { "const": "[REDACTED]" }
+      }
+    },
+    "vaultWarning": { "const": "Changes affect only local user-controlled memory; they do not change provider safety, rate limits, account state, or guarantee continuation." },
+    "vaultCapabilities": { "type": "object", "additionalProperties": false, "required": ["readable", "queryable", "editable", "snapshot", "restore", "reason"], "properties": { "readable": { "type": "boolean" }, "queryable": { "type": "boolean" }, "editable": { "type": "boolean" }, "snapshot": { "type": "boolean" }, "restore": { "type": "boolean" }, "reason": { "type": ["string", "null"], "maxLength": 512 } } },
+    "vaultProbeResult": { "type": "object", "additionalProperties": false, "required": ["format", "recognized", "capabilities", "reason", "read_only", "selected_locally", "local_only_warning"], "properties": { "format": { "enum": ["json", "jsonl", "sqlite", "chroma", "faiss", "unsupported"] }, "recognized": { "type": "boolean" }, "capabilities": { "$ref": "#/$defs/vaultCapabilities" }, "reason": { "type": ["string", "null"], "maxLength": 512 }, "read_only": { "const": true }, "selected_locally": { "const": true }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" } } },
+    "vaultSource": { "type": "object", "additionalProperties": false, "required": ["source_id", "format", "capabilities", "revision"], "properties": { "source_id": { "$ref": "#/$defs/identifier" }, "format": { "enum": ["json", "jsonl", "sqlite", "chroma", "faiss", "unsupported"] }, "capabilities": { "$ref": "#/$defs/vaultCapabilities" }, "revision": { "$ref": "#/$defs/digest" } } },
+    "vaultListResult": { "type": "object", "additionalProperties": false, "required": ["sources", "next_cursor", "local_only_warning"], "properties": { "sources": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/vaultSource" } }, "next_cursor": { "type": ["string", "null"], "maxLength": 256 }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" } } },
+    "vaultRecord": { "type": "object", "additionalProperties": false, "required": ["record_id", "namespace", "content", "metadata", "embedding_present", "source_revision"], "properties": { "record_id": { "$ref": "#/$defs/identifier" }, "namespace": { "$ref": "#/$defs/identifier" }, "content": { "type": "string", "maxLength": 65536 }, "metadata": { "type": "object", "maxProperties": 256, "additionalProperties": { "$ref": "#/$defs/safeValue" } }, "embedding_present": { "type": "boolean" }, "source_revision": { "$ref": "#/$defs/digest" }, "editable_fields": { "type": "array", "maxItems": 128, "default": [], "items": { "$ref": "#/$defs/vaultEditableField" } } } },
+    "vaultQueryResult": { "type": "object", "additionalProperties": false, "required": ["records", "next_cursor", "total", "local_only_warning"], "properties": { "records": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/vaultRecord" } }, "next_cursor": { "type": ["string", "null"], "maxLength": 256 }, "total": { "type": "integer", "minimum": 0 }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" } } },
+    "vaultGetResult": { "type": "object", "additionalProperties": false, "required": ["record", "local_only_warning"], "properties": { "record": { "$ref": "#/$defs/vaultRecord" }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" } } },
+    "vaultPlanResult": { "type": "object", "additionalProperties": false, "required": ["plan_id", "digest", "expires_at", "consequences", "warnings", "local_only_warning"], "properties": { "plan_id": { "$ref": "#/$defs/identifier" }, "digest": { "$ref": "#/$defs/digest" }, "expires_at": { "type": "string", "minLength": 1, "maxLength": 64 }, "consequences": { "type": "array", "minItems": 1, "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "warnings": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" }, "source_id": { "$ref": "#/$defs/nullableIdentifier" }, "record_id": { "$ref": "#/$defs/nullableIdentifier" }, "snapshot_id": { "$ref": "#/$defs/nullableIdentifier" }, "before_revision": { "$ref": "#/$defs/nullableDigest" }, "backup_verified": { "type": "boolean", "default": false }, "diff": { "type": "array", "maxItems": 8, "default": [], "items": { "$ref": "#/$defs/vaultDiff" } } } },
+    "vaultReceiptResult": { "type": "object", "additionalProperties": false, "required": ["receipt_id", "plan_id", "outcome", "certainty", "action_issued", "partial_failures", "created_at", "local_only_warning"], "properties": { "receipt_id": { "$ref": "#/$defs/identifier" }, "plan_id": { "$ref": "#/$defs/identifier" }, "outcome": { "type": "string", "minLength": 1, "maxLength": 128 }, "certainty": { "enum": ["verified", "failed_before_issue", "uncertain"] }, "action_issued": { "type": ["boolean", "null"] }, "partial_failures": { "$ref": "#/$defs/partialFailures" }, "created_at": { "type": "string", "minLength": 1, "maxLength": 64 }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" }, "kind": { "$ref": "#/$defs/receiptKind" }, "source_id": { "$ref": "#/$defs/nullableIdentifier" }, "record_id": { "$ref": "#/$defs/nullableIdentifier" }, "snapshot_id": { "$ref": "#/$defs/nullableIdentifier" }, "before_revision": { "$ref": "#/$defs/nullableDigest" }, "after_revision": { "$ref": "#/$defs/nullableDigest" }, "operation": { "type": ["string", "null"], "minLength": 1, "maxLength": 128, "default": null } } },
+    "vaultSnapshotListResult": { "type": "object", "additionalProperties": false, "required": ["snapshots", "local_only_warning"], "properties": { "snapshots": { "type": "array", "maxItems": 500, "items": { "type": "object", "additionalProperties": false, "required": ["snapshot_id", "source_id", "source_revision", "digest", "size", "status", "created_at"], "properties": { "snapshot_id": { "$ref": "#/$defs/identifier" }, "source_id": { "$ref": "#/$defs/identifier" }, "source_revision": { "$ref": "#/$defs/digest" }, "digest": { "$ref": "#/$defs/digest" }, "size": { "type": "integer", "minimum": 0 }, "status": { "enum": ["verified", "restored", "invalid"] }, "created_at": { "type": "string", "minLength": 1, "maxLength": 64 } } } }, "local_only_warning": { "$ref": "#/$defs/vaultWarning" } } },
+    "settingsValues": { "type": "object", "additionalProperties": false, "required": ["scan_interval_seconds", "heartbeat_grace_seconds", "retention_days", "include_unmanaged_candidates", "appearance", "reduced_motion"], "properties": { "scan_interval_seconds": { "type": "integer", "minimum": 5, "maximum": 3600 }, "heartbeat_grace_seconds": { "type": "integer", "minimum": 10, "maximum": 86400 }, "retention_days": { "type": "integer", "minimum": 1, "maximum": 365 }, "include_unmanaged_candidates": { "type": "boolean" }, "appearance": { "enum": ["system", "light", "dark"] }, "reduced_motion": { "type": "boolean" } } },
+    "settingsResult": { "type": "object", "additionalProperties": false, "required": ["settings", "revision"], "properties": { "settings": { "$ref": "#/$defs/settingsValues" }, "revision": { "type": "integer", "minimum": 0 } } },
+    "diagnosticsPlanResult": { "type": "object", "additionalProperties": false, "required": ["plan_id", "digest", "expires_at", "consequences", "warnings", "excluded_by_default"], "properties": { "plan_id": { "$ref": "#/$defs/identifier" }, "digest": { "$ref": "#/$defs/digest" }, "expires_at": { "type": "string", "minLength": 1, "maxLength": 64 }, "consequences": { "type": "array", "minItems": 1, "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "warnings": { "type": "array", "maxItems": 64, "items": { "type": "string", "maxLength": 2048 } }, "excluded_by_default": { "type": "array", "prefixItems": [{ "const": "command_lines" }, { "const": "memory_contents" }, { "const": "paths" }, { "const": "secrets" }], "minItems": 4, "maxItems": 4 } } },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retryable", "details"],
+      "properties": {
+        "code": { "enum": ["invalid_request", "not_found", "conflict", "target_changed", "permission_denied", "expired", "unsupported", "partial", "internal"] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "retryable": { "type": "boolean" },
+        "details": {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": {
+            "anyOf": [
+              { "enum": ["correlation_id", "field", "reason", "supported_version"] },
+              { "pattern": "^redacted_detail_(?:[1-9]|1[0-6])$" }
+            ]
+          },
+          "additionalProperties": { "type": ["string", "integer", "boolean", "null"], "maxLength": 256 }
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol_version", "request_id", "method", "ok", "result", "error"],
+      "properties": {
+        "protocol_version": { "$ref": "#/$defs/protocolVersion" },
+        "request_id": { "type": "string", "format": "uuid" },
+        "method": { "anyOf": [{ "$ref": "#/$defs/method" }, { "type": "null" }] },
+        "ok": { "type": "boolean" },
+        "result": { "anyOf": [{ "$ref": "#/$defs/safeValue" }, { "type": "null" }] },
+        "error": { "anyOf": [{ "$ref": "#/$defs/error" }, { "type": "null" }] }
+      },
+      "oneOf": [
+        { "properties": { "method": { "$ref": "#/$defs/method" }, "ok": { "const": true }, "result": { "type": "object" }, "error": { "type": "null" } } },
+        { "properties": { "ok": { "const": false }, "result": { "type": "null" }, "error": { "$ref": "#/$defs/error" } } }
+      ],
+      "allOf": [
+        { "if": { "properties": { "method": { "const": "system.info" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/systemInfoResult" } } } },
+        { "if": { "properties": { "method": { "const": "doctor" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/doctorResult" } } } },
+        { "if": { "properties": { "method": { "const": "scan.list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/scanResult" } } } },
+        { "if": { "properties": { "method": { "const": "agent.detail" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/agentSummary" } } } },
+        { "if": { "properties": { "method": { "const": "action.plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/actionPlanResult" } } } },
+        { "if": { "properties": { "method": { "const": "action.execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/receiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "activity.list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/activityResult" } } } },
+        { "if": { "properties": { "method": { "const": "receipt.get" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/receiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/quarantineListResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.resource-list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/cleanupResourceListResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/planResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/receiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.restore-plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/planResult" } } } },
+        { "if": { "properties": { "method": { "const": "quarantine.restore-execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/receiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultListResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.register" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultProbeResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.probe" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultProbeResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.query" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultQueryResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.get" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultGetResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.mutation.plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultPlanResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.mutation.execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultReceiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.snapshot.list" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultSnapshotListResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.restore.plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultPlanResult" } } } },
+        { "if": { "properties": { "method": { "const": "vault.restore.execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/vaultReceiptResult" } } } },
+        { "if": { "properties": { "method": { "const": "settings.get" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/settingsResult" } } } },
+        { "if": { "properties": { "method": { "const": "settings.update" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/settingsResult" } } } },
+        { "if": { "properties": { "method": { "const": "diagnostics.export-plan" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/diagnosticsPlanResult" } } } },
+        { "if": { "properties": { "method": { "const": "diagnostics.export-execute" }, "ok": { "const": true } }, "required": ["method", "ok"] }, "then": { "properties": { "result": { "$ref": "#/$defs/receiptResult" } } } }
+      ]
+    }
+  }
+}

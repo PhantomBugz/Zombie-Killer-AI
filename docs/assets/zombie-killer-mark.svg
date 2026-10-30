@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <mask id="signal-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+      <rect width="48" height="48" fill="black" />
+      <rect x="14" y="14" width="20" height="20" rx="2" fill="white" />
+      <path
+        d="M16 18h16l-9 6h5l-7 7h12"
+        fill="none"
+        stroke="black"
+        stroke-linecap="square"
+        stroke-linejoin="miter"
+        stroke-width="3.2"
+      />
+    </mask>
+  </defs>
+  <g fill="none" stroke="#58d9b0" stroke-linecap="square">
+    <rect x="10" y="9" width="28" height="30" rx="5" stroke-width="2.5" />
+    <path
+      d="M17 3v4m7-4v4m7-4v4M17 41v4m7-4v4m7-4v4M4 17h4m-4 7h4m-4 7h4m36-14h4m-4 7h4m-4 7h4"
+      stroke-width="2"
+    />
+  </g>
+  <rect
+    x="14"
+    y="14"
+    width="20"
+    height="20"
+    rx="2"
+    fill="#58d9b0"
+    mask="url(#signal-cutout)"
+  />
+</svg>

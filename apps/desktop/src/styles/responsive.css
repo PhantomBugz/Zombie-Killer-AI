@@ -1,0 +1,242 @@
+@media (min-width: 1280px) {
+  :root {
+    --nav-width: 232px;
+  }
+}
+
+@media (min-width: 900px) {
+  .navigation-toggle {
+    display: none;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1279px) {
+  :root {
+    --nav-width: 96px;
+  }
+
+  .sidebar__brand {
+    justify-content: center;
+    padding-inline: 0.5rem;
+  }
+
+  .brand-mark__word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .primary-nav {
+    padding-inline: 0.45rem;
+  }
+
+  .primary-nav__link {
+    flex-direction: column;
+    min-height: 66px;
+    gap: 0.3rem;
+    padding: 0.55rem 0.25rem;
+    font-size: 0.68rem;
+    line-height: 1.15;
+    text-align: center;
+  }
+
+  .primary-nav__link[aria-current='page']::before {
+    left: -0.45rem;
+  }
+
+  .attribution {
+    align-items: center;
+    padding-inline: 0.4rem;
+    text-align: center;
+  }
+
+  .attribution__full-copy {
+    display: none;
+  }
+
+  .attribution__compact {
+    display: inline;
+  }
+
+  .command-button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .app-shell {
+    grid-template-areas:
+      'topbar'
+      'main';
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .drawer-backdrop {
+    position: fixed;
+    z-index: 15;
+    inset: 0;
+    display: block;
+    background: var(--color-overlay);
+    overscroll-behavior: contain;
+    touch-action: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(20rem, calc(100vw - 3rem));
+    height: 100vh;
+    height: 100svh;
+    border-right-color: var(--color-boundary);
+    transform: translateX(-105%);
+    transition: transform 160ms ease-out;
+    visibility: hidden;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+  }
+
+  .topbar__identity {
+    gap: 0.65rem;
+  }
+
+  .navigation-toggle {
+    display: inline-flex;
+  }
+
+  .topbar__context {
+    order: 3;
+    width: 100%;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--color-boundary);
+  }
+}
+
+@media (max-width: 620px) {
+  .topbar {
+    padding-inline: 0.75rem;
+  }
+
+  .topbar__identity {
+    margin-right: auto;
+  }
+
+  .command-button {
+    width: 44px;
+    padding-inline: 0;
+  }
+
+  .command-button__label,
+  .command-button kbd {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .main-content {
+    padding: 1.5rem 1rem 2.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .topbar__product-name {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .topbar__actions {
+    gap: 0.4rem;
+  }
+
+  .scan-button {
+    padding-inline: 0.65rem;
+  }
+
+  .context-item {
+    flex: 1 1 0;
+  }
+}
+
+@media (max-width: 320px) {
+  .sidebar {
+    width: 280px;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .topbar {
+    padding: 0.6rem;
+  }
+
+  .topbar__context {
+    gap: 0.55rem;
+  }
+
+  .context-item__label {
+    font-size: 0.58rem;
+  }
+
+  .context-item strong {
+    font-size: 0.74rem;
+  }
+
+  .main-content {
+    padding-inline: 0.75rem;
+  }
+
+  .workspace-placeholder {
+    gap: 0.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .sidebar,
+  .sidebar__brand,
+  .topbar,
+  .topbar__context,
+  .attribution,
+  .workspace-placeholder,
+  .primary-nav__link,
+  .command-button,
+  .scan-button,
+  .icon-button {
+    border-color: CanvasText;
+  }
+
+  .primary-nav__link[aria-current='page'] {
+    border: 2px solid Highlight;
+  }
+
+  .primary-nav__link[aria-current='page']::before,
+  .coverage-indicator,
+  .workspace-placeholder__signal {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: auto;
+  }
+}

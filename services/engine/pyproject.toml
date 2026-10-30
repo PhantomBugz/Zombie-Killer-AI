@@ -1,0 +1,47 @@
+[build-system]
+requires = ["hatchling==1.32.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "zombie-killer-engine"
+version = "0.1.0a1"
+description = "Local-first agent lifecycle evidence and recovery engine"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md"]
+authors = [{ name = "PhantomBugz" }]
+keywords = ["agents", "local-first", "process-management", "recovery"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+dependencies = [
+  "psutil==7.2.2",
+  "pydantic==2.13.4",
+  "typer==0.27.1",
+]
+
+[project.urls]
+Homepage = "https://PhantomBugz.com"
+Documentation = "https://github.com/PhantomBugz/Zombie-Killer-AI#readme"
+Source = "https://github.com/PhantomBugz/Zombie-Killer-AI"
+Issues = "https://github.com/PhantomBugz/Zombie-Killer-AI/issues"
+
+[project.scripts]
+zk = "zombie_killer_engine.cli:main"
+
+[dependency-groups]
+dev = [
+  "jsonschema==4.25.1",
+  "mypy==2.3.0",
+  "pytest==9.1.1",
+  "ruff==0.16.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

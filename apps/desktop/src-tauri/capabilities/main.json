@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "main-capability",
+  "description": "Narrow local-engine capability for the single Zombie Killer window.",
+  "windows": ["main"],
+  "permissions": ["allow-engine-request"]
+}

@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a reproducible Zombie Killer defect using synthetic or redacted data.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security vulnerabilities do not belong here. Use the private link in SECURITY.md. Never paste credentials, prompts, memory contents, private paths, or unrelated process data.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.1.0-alpha.1 or a full commit ID
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Surface
+      options:
+        - Browser demo
+        - Native desktop
+        - Engine CLI
+        - Python SDK
+        - Build or CI
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Synthetic reproduction
+      description: Provide the smallest safe sequence and fixture.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result and coverage warning
+    validations:
+      required: true
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I removed secrets, prompts, memory contents, personal data, private paths, and unrelated process details.
+          required: true
+        - label: I reproduced this on a system and data I own or am authorized to test.
+          required: true

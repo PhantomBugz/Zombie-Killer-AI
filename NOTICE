@@ -1,0 +1,20 @@
+Zombie Killer
+Copyright 2026 PhantomBugz
+
+Made by PhantomBugz
+
+This product includes software developed by Zombie Killer contributors and is
+licensed under the Apache License, Version 2.0.
+
+The original Zombie Killer chip-and-heartbeat graphical design as expressed in
+apps/desktop/public/zombie-killer-mark.svg, the identical documentation copy at
+docs/assets/zombie-killer-mark.svg, the mark-specific path/coordinate data
+within apps/desktop/src/components/BrandMark.tsx, and generated derivatives
+under apps/desktop/src-tauri/icons/ is Copyright 2026 PhantomBugz and
+licensed under the Creative Commons Attribution 4.0 International License.
+The surrounding TypeScript/React software code remains Apache-2.0. Attribution:
+“Zombie Killer mark by PhantomBugz, PhantomBugz.com, CC BY 4.0.” The icon
+derivatives are resized, rasterized, or platform-packaged versions of the mark.
+Trademark rights are separate and are described in TRADEMARKS.md.
+
+Third-party notices are provided in THIRD_PARTY_NOTICES.md and LICENSES/.

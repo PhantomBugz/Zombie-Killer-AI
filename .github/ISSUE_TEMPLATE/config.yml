@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Private security report
+    url: https://github.com/PhantomBugz/Zombie-Killer-AI/security/advisories/new
+    about: Report a vulnerability privately. Do not include secrets or third-party data.
+  - name: Support and safe diagnostics
+    url: https://github.com/PhantomBugz/Zombie-Killer-AI/blob/main/SUPPORT.md
+    about: Choose the correct issue form and review diagnostics before sharing.

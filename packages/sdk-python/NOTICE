@@ -1,0 +1,15 @@
+Zombie Killer Python SDK
+Copyright 2026 PhantomBugz
+
+Made by PhantomBugz
+
+This Python distribution contains the Zombie Killer lifecycle broadcaster
+software developed by Zombie Killer contributors and is licensed under the
+Apache License, Version 2.0. See LICENSE.
+
+This distribution does not include the Zombie Killer Engine, desktop
+application, original project artwork, generated icons, or bundled font files.
+Legal notices for those repository components are outside the scope of this
+distribution.
+
+Package-specific dependency scope is described in THIRD_PARTY_NOTICES.md.

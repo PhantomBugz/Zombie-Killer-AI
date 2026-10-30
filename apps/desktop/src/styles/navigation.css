@@ -1,0 +1,123 @@
+.sidebar {
+  grid-area: sidebar;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  height: 100svh;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-boundary);
+  background: var(--color-surface);
+}
+
+.sidebar__brand {
+  display: flex;
+  align-items: center;
+  min-height: 73px;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--color-boundary);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.7rem;
+  color: var(--color-phosphor);
+}
+
+.brand-mark__symbol {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.brand-mark__word {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.075em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.primary-nav {
+  padding: 1rem 0.75rem;
+}
+
+.primary-nav ul {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.primary-nav__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  gap: 0.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: 0.93rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.primary-nav__link:hover {
+  border-color: var(--color-boundary);
+  color: var(--color-text);
+}
+
+.primary-nav__link[aria-current='page'] {
+  border-color: color-mix(in srgb, var(--color-phosphor) 55%, var(--color-boundary));
+  background: var(--color-elevated);
+  color: var(--color-text);
+}
+
+.primary-nav__link[aria-current='page']::before {
+  position: absolute;
+  top: 0.65rem;
+  bottom: 0.65rem;
+  left: -0.8rem;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--color-phosphor);
+  content: '';
+}
+
+.primary-nav__link[aria-current='page'] .icon {
+  color: var(--color-phosphor);
+}
+
+.icon {
+  flex: 0 0 auto;
+}
+
+.attribution {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 1rem 1.25rem 1.25rem;
+  margin-top: auto;
+  border-top: 1px solid var(--color-boundary);
+  color: var(--color-muted);
+  font-size: 0.74rem;
+}
+
+.attribution__full-copy {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.attribution__compact {
+  display: none;
+}

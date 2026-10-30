@@ -1,0 +1,51 @@
+name: Detection false positive or false negative
+description: Report a classification problem without exposing private process data.
+title: "[Detection]: "
+labels:
+  - detection
+body:
+  - type: dropdown
+    id: direction
+    attributes:
+      label: Report type
+      options:
+        - False positive
+        - False negative
+        - Wrong evidence grade
+        - Misleading coverage
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Operating system and architecture
+    validations:
+      required: true
+  - type: textarea
+    id: observation
+    attributes:
+      label: Redacted observed state, grade, reason codes, and coverage warning
+      description: Use synthetic labels; exclude raw command lines and identifiers.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected classification and why
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safe evidence
+      options:
+        - label: This report contains no credentials, prompts, memory content, personal data, or unrelated process details.
+          required: true
+        - label: I will not use a detection label alone as authority to stop a process.
+          required: true

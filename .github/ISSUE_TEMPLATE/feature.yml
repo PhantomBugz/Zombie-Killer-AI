@@ -1,0 +1,42 @@
+name: Feature request
+description: Propose a local-first capability with explicit safety boundaries.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Operator problem
+      description: Describe the problem without prescribing an implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and failure states
+      description: What evidence supports the result, and what must display as unknown, partial, or unsupported?
+    validations:
+      required: true
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Privacy and trust-boundary impact
+      description: Identify new data, permissions, processes, files, adapters, network behavior, or release permissions.
+    validations:
+      required: true
+  - type: checkboxes
+    id: principles
+    attributes:
+      label: Project principles
+      options:
+        - label: The proposal does not require provider safety/account/rate-limit bypass or automatic killing.
+          required: true
+        - label: The proposal remains useful when visibility is partial and fails closed before mutation.
+          required: true

@@ -1,0 +1,16 @@
+Zombie Killer Engine
+Copyright 2026 PhantomBugz
+
+Made by PhantomBugz
+
+This Python distribution contains the Zombie Killer Engine software developed
+by Zombie Killer contributors and is licensed under the Apache License,
+Version 2.0. See LICENSE.
+
+This distribution does not include the Zombie Killer desktop application,
+original project artwork, generated icons, or bundled font files. Legal notices
+for those repository components are outside the scope of this distribution.
+
+Direct runtime dependencies are installed as separate distributions and are
+not bundled in the engine wheel or source distribution. Package-specific
+dependency scope is described in THIRD_PARTY_NOTICES.md.

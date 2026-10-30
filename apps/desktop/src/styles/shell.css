@@ -1,0 +1,244 @@
+.app-shell {
+  display: grid;
+  grid-template-areas:
+    'sidebar topbar'
+    'sidebar main';
+  grid-template-columns: var(--nav-width) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.drawer-backdrop {
+  display: none;
+}
+
+.topbar {
+  grid-area: topbar;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 73px;
+  gap: 1.25rem;
+  padding: 0.7rem clamp(1rem, 2.2vw, 2rem);
+  border-bottom: 1px solid var(--color-boundary);
+  background: var(--color-canvas);
+}
+
+.topbar__identity {
+  display: flex;
+  align-items: center;
+  min-width: max-content;
+}
+
+.topbar__product-name {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.navigation-toggle {
+  display: none;
+}
+
+.topbar__context {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: clamp(0.85rem, 2vw, 1.75rem);
+  margin-right: auto;
+}
+
+.context-item {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.55rem;
+  color: var(--color-muted);
+}
+
+.context-item > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.context-item__label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.07em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.context-item strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coverage-indicator {
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid var(--color-phosphor);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--color-canvas);
+  background: var(--color-phosphor);
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.icon-button,
+.command-button,
+.scan-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+}
+
+.icon-button {
+  width: 44px;
+  padding: 0;
+  border: 1px solid var(--color-boundary);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.command-button {
+  gap: 0.45rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-boundary);
+  background: var(--color-surface);
+  color: var(--color-muted);
+}
+
+.command-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.command-button kbd {
+  padding: 0.12rem 0.35rem;
+  border: 1px solid var(--color-boundary);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+.command-button__label {
+  font-size: 0.8rem;
+}
+
+.scan-button {
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--color-phosphor);
+  background: var(--color-phosphor);
+  color: var(--color-on-accent);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.scan-button:hover {
+  border-color: var(--color-focus);
+  background: var(--color-focus);
+}
+
+.scan-button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.scan-button[aria-busy='true'] .icon {
+  animation: scan-progress 700ms linear infinite;
+}
+
+@keyframes scan-progress {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.main-content {
+  grid-area: main;
+  min-width: 0;
+  padding: clamp(1.5rem, 4vw, 4rem);
+  outline-offset: -3px;
+}
+
+.page-header {
+  max-width: 48rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.6rem;
+  color: var(--color-phosphor);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.page-summary {
+  max-width: 42rem;
+  margin: 1rem 0 0;
+  color: var(--color-muted);
+  font-size: clamp(1rem, 1.6vw, 1.12rem);
+}
+
+.workspace-placeholder {
+  display: flex;
+  max-width: 46rem;
+  gap: 1rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  margin-top: clamp(2rem, 6vw, 4.5rem);
+  border: 1px solid var(--color-boundary);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.workspace-placeholder__signal {
+  flex: 0 0 auto;
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-top: 0.4rem;
+  border: 2px solid var(--color-phosphor);
+  border-radius: 50%;
+}
+
+.workspace-placeholder h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.workspace-placeholder p {
+  margin: 0.35rem 0 0;
+  color: var(--color-muted);
+}

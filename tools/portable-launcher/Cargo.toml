@@ -1,0 +1,32 @@
+[package]
+name = "zombie-killer-portable"
+version = "0.1.0-alpha.1"
+edition = "2024"
+rust-version = "1.97.1"
+authors = ["PhantomBugz"]
+description = "PhantomBugz Zombie Killer portable launcher"
+license = "Apache-2.0"
+publish = false
+
+[workspace]
+
+[dependencies]
+flate2 = "=1.1.9"
+serde = { version = "=1.0.228", features = ["derive"] }
+serde_json = "1.0.145"
+sha2 = "=0.10.9"
+tempfile = "=3.27.0"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_UI_WindowsAndMessaging"] }
+
+[build-dependencies]
+tauri-winres = "=0.3.6"
+sha2 = "=0.10.9"
+
+[profile.release]
+opt-level = "s"
+codegen-units = 1
+lto = true
+strip = true
+panic = "abort"
