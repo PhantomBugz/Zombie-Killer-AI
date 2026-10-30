@@ -308,6 +308,16 @@ def _windows_process_sid(pid: int) -> str:
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
     kernel32.OpenProcess.restype = ctypes.c_void_p
+    kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+    advapi32.OpenProcessToken.argtypes = (
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+        ctypes.POINTER(ctypes.c_void_p),
+    )
+    advapi32.ConvertSidToStringSidW.argtypes = (
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_wchar_p),
+    )
     process = kernel32.OpenProcess(0x1000, False, pid)
     if not process:
         raise OSError(ctypes.get_last_error(), "OpenProcess failed")
@@ -416,6 +426,12 @@ def _secure_directory(path: Path) -> None:
 def _secure_windows_directory(path: Path) -> None:
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CloseHandle.argtypes = (ctypes.c_void_p,)
+    advapi32.SetKernelObjectSecurity.argtypes = (
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+        ctypes.c_void_p,
+    )
     descriptor = ctypes.c_void_p()
     if not advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW(
         "D:P(A;OICI;FA;;;OW)(A;OICI;FA;;;SY)", 1, ctypes.byref(descriptor), None
@@ -446,6 +462,10 @@ def _secure_windows_directory(path: Path) -> None:
 def _verify_windows_directory(path: Path) -> None:
     advapi32 = ctypes.WinDLL("advapi32", use_last_error=True)
     kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    advapi32.ConvertSidToStringSidW.argtypes = (
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_wchar_p),
+    )
     owner = ctypes.c_void_p()
     descriptor = ctypes.c_void_p()
     result = advapi32.GetNamedSecurityInfoW(

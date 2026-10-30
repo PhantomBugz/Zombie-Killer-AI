@@ -1392,6 +1392,11 @@ def cancellation_user_fingerprint(
         ):
             raise OSError(ctypes.get_last_error(), "GetTokenInformation failed")
         token_user = ctypes.cast(buffer, ctypes.POINTER(_ProtocolTokenUser)).contents
+        advapi32.ConvertSidToStringSidW.argtypes = (
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_wchar_p),
+        )
+        advapi32.ConvertSidToStringSidW.restype = ctypes.c_int
         if not advapi32.ConvertSidToStringSidW(
             token_user.user.sid,
             ctypes.byref(rendered),

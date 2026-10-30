@@ -446,6 +446,8 @@ def _windows_token_sid(
         token_user = ctypes.cast(token_buffer, ctypes.POINTER(_TokenUser)).contents
         rendered = ctypes.c_wchar_p()
         convert = advapi32.ConvertSidToStringSidW
+        convert.argtypes = (ctypes.c_void_p, ctypes.POINTER(ctypes.c_wchar_p))
+        convert.restype = ctypes.c_int
         if not convert(token_user.user.sid, ctypes.byref(rendered)):
             raise OSError(ctypes.get_last_error(), "SID conversion failed")
         try:
