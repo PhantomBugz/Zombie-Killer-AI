@@ -55,7 +55,8 @@ function assertNativeUnixHarnessPolicy(text) {
 }
 
 function assertHostedWindowsSourceGatePolicy(text) {
-  const ownerShell = 'python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"'
+  // The runner chooses .ps1 from the first shell word; Python would create .py.
+  const ownerShell = "pwsh -NoProfile -Command \"python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File '{0}'; exit $LASTEXITCODE\""
   const steps = parse(text)?.jobs?.native?.steps
   assert.ok(Array.isArray(steps), 'native-build.yml must define native verification steps')
   const named = (name) => steps.find((step) => step?.name === name)
@@ -176,7 +177,7 @@ const windowsPythonTests = ciJobs?.python?.steps?.find(
 assert.equal(windowsPythonTests?.if, "runner.os == 'Windows'")
 assert.equal(
   windowsPythonTests?.shell,
-  'python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"',
+  "pwsh -NoProfile -Command \"python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File '{0}'; exit $LASTEXITCODE\"",
 )
 assert.match(windowsPythonTests.run, /^\s*\$ErrorActionPreference = 'Stop'/u)
 assert.match(ciWorkflow, /pytest services\/engine\/tests packages\/sdk-python\/tests packages\/protocol\/tests scripts\/tests -q/u)

@@ -87,7 +87,7 @@ jobs:
         run: uv run pytest services/engine/tests packages/sdk-python/tests packages/protocol/tests scripts/tests -q
       - name: Test engine, SDK, and release helpers on Windows
         if: runner.os == 'Windows'
-        shell: python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File "{0}"
+        shell: pwsh -NoProfile -Command "python -I scripts/ci_windows_owner.py -- pwsh -NoProfile -File '{0}'; exit $LASTEXITCODE"
         run: |
           $ErrorActionPreference = 'Stop'
           uv run pytest services/engine/tests packages/sdk-python/tests packages/protocol/tests scripts/tests -q
