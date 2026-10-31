@@ -67,21 +67,6 @@ jobs:
         run: python -m pip install uv==0.12.3
       - name: Sync exact Python lock
         run: uv sync --frozen
-      - name: Diagnose new-directory ownership on private Windows runner
-        if: github.event.repository.private && runner.os == 'Windows' && matrix.python == '3.12'
-        shell: pwsh
-        run: |
-          $probe = & python -c "import tempfile; print(tempfile.mkdtemp(prefix='zk-owner-'))"
-          if ($LASTEXITCODE -ne 0 -or -not $probe) { throw 'Owner probe could not create a directory.' }
-          try {
-            $tokenSid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-            $ownerSid = (Get-Acl -LiteralPath $probe).GetOwner([System.Security.Principal.SecurityIdentifier]).Value
-            Write-Output "token_user_sid=$tokenSid"
-            Write-Output "new_directory_owner_sid=$ownerSid"
-            Write-Output "sids_match=$($tokenSid -eq $ownerSid)"
-          } finally {
-            Remove-Item -LiteralPath $probe -Force
-          }
       - name: Test engine, SDK, and release helpers
         if: runner.os != 'Windows'
         run: uv run pytest services/engine/tests packages/sdk-python/tests packages/protocol/tests scripts/tests -q
