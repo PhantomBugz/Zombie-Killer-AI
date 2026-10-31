@@ -379,6 +379,29 @@ function Start-ZkPortableRun {
     } while ($true)
 }
 
+function Get-ZkPortableSettlementDiagnostic {
+    param([Parameter(Mandatory)][psobject] $Run)
+
+    $members = @($Run.Launch.GetProcessIds() | ForEach-Object { [int] $_ } | Sort-Object)
+    $live = [Collections.Generic.List[string]]::new()
+    foreach ($record in $Run.Registry.Values) {
+        $record.Process.Refresh()
+        if (-not $record.Process.HasExited) {
+            $name = [IO.Path]::GetFileName([string] $record.Identity.ExecutablePath)
+            $live.Add("$($record.Identity.Pid):$($record.Kind):$name")
+        }
+    }
+    $wrapper = $Run.Registry[(Get-ZkProcessIdentityKey -Identity $Run.WrapperIdentity)]
+    $title = ''
+    if ($null -ne $wrapper -and -not $wrapper.Process.HasExited) {
+        $wrapper.Process.Refresh()
+        $title = ($wrapper.Process.MainWindowTitle -replace '[\r\n]', ' ')
+        if ($title.Length -gt 120) { $title = $title.Substring(0, 120) }
+    }
+    $native = $Run.Registry[(Get-ZkProcessIdentityKey -Identity $Run.NativeRecord.Identity)]
+    return "wrapper_active=$($Run.Launch.IsLaunchedProcessActive()); native_active=$($null -ne $native -and -not $native.Process.HasExited); job_member_pids=$($members -join ','); captured_live=$($live -join ','); runtime_exists=$(Test-Path -LiteralPath $Run.RuntimeRoot); wrapper_window_title='$title'"
+}
+
 function Close-ZkPortableRun {
     param([Parameter(Mandatory)][psobject] $Run)
     if ($null -eq $Run.NativeRecord -or -not (Send-ZkGracefulClose -Identity $Run.NativeRecord.Identity)) {
@@ -390,7 +413,11 @@ function Close-ZkPortableRun {
         Assert-ZkTrackedTcpListenersAbsent -Registry $Run.Registry
         Update-ZkCapturedExitCodes -Registry $Run.Registry
         if (Test-ZkLaunchSettled -Launch $Run.Launch) { break }
-        if ([DateTime]::UtcNow -ge $deadline) { throw 'Portable launch job did not settle after graceful native close.' }
+        if ([DateTime]::UtcNow -ge $deadline) {
+            $diagnostic = try { Get-ZkPortableSettlementDiagnostic -Run $Run }
+                catch { "diagnostic_error=$($_.Exception.GetType().Name)" }
+            throw "Portable launch job did not settle after graceful native close ($diagnostic)."
+        }
         Start-Sleep -Milliseconds 50
     } while ($true)
     Assert-ZkSuccessfulApplicationExit -Registry $Run.Registry -ApplicationIdentity $Run.NativeRecord.Identity

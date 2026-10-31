@@ -222,6 +222,44 @@ Invoke-Test 'failed diagnostic process captures stderr, exit code, and remains i
 }
 
 if ($IsWindows) {
+    Invoke-Test 'settlement diagnostic reports exact retained job member state' {
+        $owned = New-ZkOwnedStateRoot
+        $launch = $null
+        $process = $null
+        $identity = $null
+        $registry = New-ZkCaptureRegistry
+        try {
+            $startInfo = New-ZkSanitizedStartInfo -ExecutablePath (Get-Process -Id $PID).Path -StateRoot $owned.Path
+            foreach ($argument in @('-NoProfile', '-NonInteractive', '-Command', 'Start-Sleep -Seconds 60')) { $startInfo.ArgumentList.Add($argument) }
+            $launch = Start-ZkJobBoundProcess -StartInfo $startInfo
+            $process = Get-Process -Id ([int] $launch.ProcessId)
+            $identity = Get-ZkProcessIdentity -Process $process
+            Assert-ZkRetainedLaunchIdentity -Launch $launch -Identity $identity
+            $record = Add-ZkCapturedRecord -Registry $registry -Identity $identity -Process $process -Kind descendant
+            $run = [pscustomobject]@{
+                Launch = $launch; Registry = $registry; WrapperIdentity = $identity
+                NativeRecord = $record; RuntimeRoot = $owned.Path
+            }
+            $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
+            Assert-True ($diagnostic.Contains('wrapper_active=True')) 'live exact wrapper must be reported'
+            Assert-True ($diagnostic.Contains('native_active=True')) 'live exact native record must be reported'
+            Assert-True ($diagnostic.Contains("job_member_pids=$($identity.Pid)")) 'job member PID must come from the retained job'
+            Assert-True ($diagnostic.Contains("captured_live=$($identity.Pid):descendant:")) 'captured member must be reported with exact identity and kind'
+            Assert-True ($diagnostic.Contains('runtime_exists=True')) 'owned runtime existence must be reported'
+        }
+        finally {
+            if ($null -ne $identity) { Stop-ZkExactProcess -Identity $identity | Out-Null }
+            elseif ($null -ne $launch) { $launch.TerminateLaunchedProcess(5000) | Out-Null }
+            if ($null -ne $process -and $registry.Count -eq 0) { $process.Dispose() }
+            if ($null -ne $launch) {
+                Assert-True (Test-ZkLaunchSettled -Launch $launch) 'diagnostic fixture must fully settle'
+                $launch.Dispose()
+            }
+            Dispose-ZkCaptureRegistry -Registry $registry
+            Remove-ZkOwnedStateRoot -StateRoot $owned.Path -MarkerToken $owned.MarkerToken
+        }
+    }
+
     Invoke-Test 'portable CLI preserves the explicitly supplied executable while importing native helpers' {
         $owned = New-ZkOwnedStateRoot
         $result = $null
