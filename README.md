@@ -8,7 +8,7 @@
 
 **Made by [PhantomBugz](https://PhantomBugz.com)**
 
-**Source version:** `0.1.0-alpha.1`. This source tree is not a signed installer; [GitHub Releases](https://github.com/PhantomBugz/Zombie-Killer-AI/releases) is the record of downloadable artifacts.
+**Source release:** [`v0.1.0-alpha.1`](https://github.com/PhantomBugz/Zombie-Killer-AI/releases/tag/v0.1.0-alpha.1). This source alpha contains source archives only; no prebuilt native executable or signed installer is attached.
 
 The [project page](https://phantombugz.com/zombie-killer.html) tracks public availability. Use only downloads linked from a verified project release; the browser preview is synthetic and does not exercise native process actions.
 
@@ -36,7 +36,7 @@ The name is playful; the evidence model is not. A true POSIX zombie is a **defun
 | Activity/receipts | Durable mixed-operation receipts, lookup, and explicit local diagnostics export | Export excludes private memory drafts and sensitive content, preserves existing destinations, and reports uncertainty without relabeling success |
 | Python SDK | Lifecycle leases, cancellation-safe async startup, cooperative cancellation, and root/fingerprint resource declarations | Registration never triggers cleanup; counters are caller-measured and changed resources require fresh declarations |
 | Desktop | Tauri/React shell and capability-gated local recovery workflows; synthetic browser demo | Browser demo flows do not prove native capabilities; platform actions depend on actual engine support |
-| Signed installers and package publication | Not implemented | Human-owned signing/notarization and release approval are required |
+| Signed installers and package-registry publication | Not implemented | Human-owned signing/notarization and release approval are required |
 
 See the [roadmap](ROADMAP.md) for planned work and [architecture](docs/architecture.md) for the trust boundaries.
 

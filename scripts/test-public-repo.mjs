@@ -602,7 +602,7 @@ assert.match(
 )
 assert.match(
   changelog,
-  /This alpha source tree does not certify a signed installer, package publication, or clean-machine\/platform release approval; those are separate release decisions\./u,
+  /This alpha source tree does not certify a signed installer, package-registry publication, or clean-machine\/platform release approval; those are separate release decisions\./u,
 )
 const readme = readFileSync(path.join(root, 'README.md'), 'utf8')
 const contributing = readFileSync(path.join(root, 'CONTRIBUTING.md'), 'utf8')

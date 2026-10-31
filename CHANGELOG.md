@@ -4,7 +4,9 @@ All notable changes to this project are documented in this file. The format foll
 
 ## [Unreleased]
 
-Target source version: `[0.1.0-alpha.1]`. This section remains unreleased until a maintainer creates and verifies the corresponding tag.
+## [0.1.0-alpha.1] - 2026-10-31
+
+This public alpha contains source archives only. No prebuilt native executable or signed installer is attached.
 
 ### Added
 
@@ -20,8 +22,8 @@ Target source version: `[0.1.0-alpha.1]`. This section remains unreleased until 
 - Narrow Rust broker that launches only the verified local engine resource over standard I/O.
 - Open-source governance, security, privacy, documentation, and verification workflows.
 - Layout-preserving unsigned native archives with hidden engine inventory entries, source legal material, and manifest-bound Python runtime attribution.
-- A single-file unsigned Windows x64 portable wrapper built from the verified native ZIP, with an extraction diagnostic and native smoke coverage. The executable is not a signed installer or public download yet.
-- This alpha source tree does not certify a signed installer, package publication, or clean-machine/platform release approval; those are separate release decisions.
+- A single-file unsigned Windows x64 portable wrapper built from the verified native ZIP, with an extraction diagnostic and native smoke coverage. It remains a CI verification artifact and is not attached to this source-only release.
+- This alpha source tree does not certify a signed installer, package-registry publication, or clean-machine/platform release approval; those are separate release decisions.
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 # Release Verification
 
-`0.1.0-alpha.1` is a source release candidate. No signed installer, public single-file executable, or published package is claimed by this candidate tree. The [project page](https://phantombugz.com/zombie-killer.html) tracks public availability.
+`0.1.0-alpha.1` is a public source alpha. Its GitHub Release contains source archives only; native and portable binaries produced by CI remain verification artifacts, not release downloads. No signed installer or package-registry distribution is claimed. The [project page](https://phantombugz.com/zombie-killer.html) links to the release.
 
 The alpha native qualification targets the hosted `windows-2025` and `ubuntu-24.04` runners. macOS native operation and mutation workflows remain experimental and unqualified: CI checks only scanner unit tests and the browser frontend on `macos-15`, and the native workflow produces no macOS artifact.
 
@@ -63,10 +63,9 @@ Signing identifies the signer and protects artifact integrity after signing; it 
 1. Confirm release commit, clean tree, version, changelog date, and citation date.
 2. Pass all automated and end-to-end gates on supported platforms, including the Windows single-file portable build and smoke if that EXE is offered.
 3. Review dependencies, licenses, SBOMs, secret scan, CodeQL, and dependency review.
-4. Build from the tag with protected release permissions.
-5. Sign/notarize only through the documented human gate, if distributing installers.
-6. Verify signatures where claimed, hashes, and portable runtime behavior on a clean machine.
-7. Confirm the intended public repository and private security-reporting form are live before linking to them.
-8. Publish release notes that state known capability gaps and tested platforms.
+4. Confirm the intended public repository and private security-reporting form are live before linking to them.
+5. Publish source-only release notes that state known capability gaps and tested platforms.
+6. Before attaching native binaries in a later release, rebuild from the tag with protected release permissions; review the exact artifacts, legal texts, SBOMs, and hashes; and verify portable runtime behavior on a clean machine.
+7. Sign/notarize only through the documented human gate if distributing installers, then verify any claimed signatures.
 
 No donation, urgency, or version label can waive these gates.

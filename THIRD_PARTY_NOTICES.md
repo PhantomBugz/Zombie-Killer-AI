@@ -28,7 +28,7 @@ Native PyInstaller builds can contain CPython runtime files, OpenSSL libraries, 
 
 The manifest-bound SBOM records each file and hash but intentionally leaves transitive license conclusions as `NOASSERTION`. Neither it nor the collected runtime dependency graph proves which optional modules were bundled or supplies every platform-library and desktop JavaScript/Rust obligation. Inspect actual binaries and their corresponding legal texts on each release runner; retained metadata and license texts are evidence, not a legal certification.
 
-Release candidates must generate and inspect both lockfile and sidecar-file inventories and preserve every license/notice required by the actual bundled sidecar and native target. This alpha notice is not a claim that an unsigned installer has completed that audit; publication remains blocked on the checks in [release verification](docs/release-verification.md).
+Publishing a native artifact requires inspecting both lockfile and manifest-bound sidecar inventories and preserving every license/notice applicable to the actual bundled files. This source-only alpha attaches no native binary; CI artifacts are verification evidence, not GitHub Release downloads. A later binary release requires the human artifact review in [release verification](docs/release-verification.md).
 
 ## Original project artwork
 

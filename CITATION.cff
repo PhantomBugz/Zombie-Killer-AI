@@ -3,6 +3,7 @@ message: "If Zombie Killer helps your work, cite this source version."
 title: "Zombie Killer"
 type: software
 version: 0.1.0-alpha.1
+date-released: 2026-10-31
 abstract: "A local-first containment console for Agentic AI processes and supported local memory stores."
 authors:
   - name: PhantomBugz
