@@ -16,7 +16,7 @@ import pytest
 
 import zombie_killer_engine.quarantine as quarantine_module
 from zombie_killer_engine.models import ProcessIdentity
-from zombie_killer_engine.paths import AppPaths
+from zombie_killer_engine.paths import AppPaths, WindowsPermissionBackend
 from zombie_killer_engine.quarantine import (
     CleanupManifest,
     CleanupRejectedError,
@@ -67,26 +67,7 @@ class QuarantinePlanner(_QuarantinePlanner):
                 root = Path(raw_root)
                 if not root.is_dir():
                     continue
-                owner_sid = quarantine_module._windows_current_user_sid()
-                for command in (
-                    ["icacls", os.fspath(root), "/inheritance:r"],
-                    [
-                        "icacls",
-                        os.fspath(root),
-                        "/grant:r",
-                        f"*{owner_sid}:(OI)(CI)F",
-                        "*S-1-5-18:(OI)(CI)F",
-                        "*S-1-5-32-544:(OI)(CI)F",
-                    ],
-                ):
-                    secured = subprocess.run(
-                        command,
-                        capture_output=True,
-                        text=True,
-                        check=False,
-                    )
-                    if secured.returncode != 0:
-                        raise RuntimeError(f"test ACL setup failed: {secured.stderr.strip()}")
+                WindowsPermissionBackend().restrict(root)
         kwargs.setdefault("registration_resolver", REGISTRY)
         super().__init__(*args, **kwargs)  # type: ignore[arg-type]
 
@@ -135,6 +116,28 @@ def manifest(
     )
     REGISTRY.register(cleanup_manifest)
     return cleanup_manifest
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows ACLs are platform-specific")
+def test_test_planner_replaces_explicit_untrusted_root_acl(tmp_path: Path) -> None:
+    root = tmp_path / "approved"
+    root.mkdir()
+    target = root / "artifact.bin"
+    target.write_bytes(b"test")
+    granted = subprocess.run(
+        ["icacls", str(root), "/grant", "*S-1-1-0:(OI)(CI)M"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if granted.returncode != 0:
+        pytest.skip(f"ACL modification unavailable: {granted.stderr.strip()}")
+    try:
+        plan = QuarantinePlanner((root,), clock=MutableClock()).create_plan(manifest(root, target))
+        assert plan.fingerprint.owner == quarantine_module._windows_current_user_sid()
+        WindowsPermissionBackend().verify(root)
+    finally:
+        WindowsPermissionBackend().restrict(root)
 
 
 def initialized_store(paths: AppPaths, clock: MutableClock) -> SQLiteStateStore:
@@ -745,6 +748,7 @@ def test_windows_fingerprint_uses_canonical_owner_sid(tmp_path: Path) -> None:
 def test_windows_approved_root_rejects_everyone_write_acl(tmp_path: Path) -> None:
     root = tmp_path / "approved"
     root.mkdir()
+    WindowsPermissionBackend().restrict(root)
     target = root / "artifact.bin"
     target.write_bytes(b"test")
     granted = subprocess.run(
@@ -775,6 +779,7 @@ def test_windows_approved_root_rejects_interactive_users_modify_acl(
 ) -> None:
     root = tmp_path / "approved"
     root.mkdir()
+    WindowsPermissionBackend().restrict(root)
     target = root / "artifact.bin"
     target.write_bytes(b"test")
     interactive_users = "*S-1-5-4"
