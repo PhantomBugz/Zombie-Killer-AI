@@ -382,24 +382,47 @@ function Start-ZkPortableRun {
 function Get-ZkPortableSettlementDiagnostic {
     param([Parameter(Mandatory)][psobject] $Run)
 
-    $members = @($Run.Launch.GetProcessIds() | ForEach-Object { [int] $_ } | Sort-Object)
+    # These independent process and UI queries can race with process exit. Report clues
+    # from the exact launch job, not an atomic snapshot or a machine-wide process list.
+    $members = @($Run.Launch.GetProcessIds() | ForEach-Object { [long] $_ } | Sort-Object)
+    $memberSample = @($members | Select-Object -First 16)
     $live = [Collections.Generic.List[string]]::new()
+    $liveCount = 0
     foreach ($record in $Run.Registry.Values) {
         $record.Process.Refresh()
         if (-not $record.Process.HasExited) {
-            $name = [IO.Path]::GetFileName([string] $record.Identity.ExecutablePath)
-            $live.Add("$($record.Identity.Pid):$($record.Kind):$name")
+            $liveCount += 1
+            if ($live.Count -lt 16) {
+                $kind = switch ([string] $record.Kind) {
+                    'application' { 'application'; break }
+                    'engine' { 'engine'; break }
+                    'descendant' { 'descendant'; break }
+                    default { 'other' }
+                }
+                $live.Add("$($record.Identity.Pid):$kind")
+            }
         }
     }
     $wrapper = $Run.Registry[(Get-ZkProcessIdentityKey -Identity $Run.WrapperIdentity)]
-    $title = ''
-    if ($null -ne $wrapper -and -not $wrapper.Process.HasExited) {
+    $windowPresent = $false
+    $errorDialog = $false
+    $windowProbeError = $false
+    if ($null -ne $wrapper) {
         $wrapper.Process.Refresh()
-        $title = ($wrapper.Process.MainWindowTitle -replace '[\r\n]', ' ')
-        if ($title.Length -gt 120) { $title = $title.Substring(0, 120) }
+        if (-not $wrapper.Process.HasExited) {
+            try {
+                $windowPresent = $wrapper.Process.MainWindowHandle -ne [IntPtr]::Zero
+                $errorDialog = [string]::Equals(
+                    [string] $wrapper.Process.MainWindowTitle,
+                    'Zombie Killer — PhantomBugz',
+                    [StringComparison]::Ordinal
+                )
+            }
+            catch { $windowProbeError = $true }
+        }
     }
     $native = $Run.Registry[(Get-ZkProcessIdentityKey -Identity $Run.NativeRecord.Identity)]
-    return "wrapper_active=$($Run.Launch.IsLaunchedProcessActive()); native_active=$($null -ne $native -and -not $native.Process.HasExited); job_member_pids=$($members -join ','); captured_live=$($live -join ','); runtime_exists=$(Test-Path -LiteralPath $Run.RuntimeRoot); wrapper_window_title='$title'"
+    return "snapshot_nonatomic=True; wrapper_active=$($Run.Launch.IsLaunchedProcessActive()); native_active=$($null -ne $native -and -not $native.Process.HasExited); job_member_count=$($members.Count); job_member_pids=$($memberSample -join ','); job_member_sample_truncated=$($members.Count -gt 16); captured_live_count=$liveCount; captured_live=$($live -join ','); captured_live_sample_truncated=$($liveCount -gt 16); runtime_exists=$(Test-Path -LiteralPath $Run.RuntimeRoot); wrapper_window_present=$windowPresent; wrapper_error_dialog=$errorDialog; wrapper_window_probe_error=$windowProbeError"
 }
 
 function Close-ZkPortableRun {

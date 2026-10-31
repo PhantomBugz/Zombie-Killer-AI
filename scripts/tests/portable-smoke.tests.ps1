@@ -68,6 +68,34 @@ function Stop-TestOwnedJobs([psobject] $OwnedState, [Collections.Generic.List[ob
         foreach ($run in $Runs) { Dispose-ZkCaptureRegistry -Registry $run.Registry; $run.Launch.Dispose() }
     }
 }
+function New-TestSettlementSnapshot([uint32[]] $MemberPids, [int] $CapturedCount, [string] $WindowTitle) {
+    $process = [pscustomobject]@{
+        HasExited = $false; MainWindowTitle = $WindowTitle; MainWindowHandle = [IntPtr] 42
+    }
+    $process | Add-Member -MemberType ScriptMethod -Name Refresh -Value { }
+    $launch = [pscustomobject]@{ MemberPids = $MemberPids }
+    $launch | Add-Member -MemberType ScriptMethod -Name GetProcessIds -Value { return $this.MemberPids }
+    $launch | Add-Member -MemberType ScriptMethod -Name IsLaunchedProcessActive -Value { return $true }
+    $registry = New-ZkCaptureRegistry
+    $wrapperIdentity = $null
+    $wrapperRecord = $null
+    for ($index = 1; $index -le $CapturedCount; $index++) {
+        $identity = [pscustomobject]@{
+            Pid = $index; StartTimeUtcTicks = 1
+            ExecutablePath = (Join-Path $PSScriptRoot 'secret-image-name.exe')
+        }
+        $record = [pscustomobject]@{
+            Identity = $identity; Kind = $(if ($index -eq 2) { 'secret-kind' } else { 'descendant' })
+            Process = $process
+        }
+        $registry.Add((Get-ZkProcessIdentityKey -Identity $identity), $record)
+        if ($index -eq 1) { $wrapperIdentity = $identity; $wrapperRecord = $record }
+    }
+    return [pscustomobject]@{
+        Launch = $launch; Registry = $registry; WrapperIdentity = $wrapperIdentity
+        NativeRecord = $wrapperRecord; RuntimeRoot = $PSScriptRoot
+    }
+}
 
 Invoke-Test 'portable smoke requires a disposable Windows profile before reading any artifact' {
     $previous = $env:ZK_DISPOSABLE_WINDOWS_PROFILE
@@ -222,6 +250,31 @@ Invoke-Test 'failed diagnostic process captures stderr, exit code, and remains i
 }
 
 if ($IsWindows) {
+    Invoke-Test 'settlement diagnostic bounds membership and omits child and window text' {
+        $run = New-TestSettlementSnapshot -MemberPids ([uint32[]] (1..40)) -CapturedCount 40 -WindowTitle "secret-window`ntext"
+        $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
+        Assert-True ($diagnostic.Contains('job_member_count=40')) 'complete job count must remain visible'
+        Assert-True ($diagnostic.Contains('captured_live_count=40')) 'complete captured live count must remain visible'
+        Assert-True ($diagnostic.Contains('job_member_sample_truncated=True')) 'job sample must declare truncation'
+        Assert-True ($diagnostic.Contains('captured_live_sample_truncated=True')) 'captured sample must declare truncation'
+        $memberSample = [regex]::Match($diagnostic, 'job_member_pids=([^;]*)').Groups[1].Value
+        $capturedSample = [regex]::Match($diagnostic, 'captured_live=([^;]*)').Groups[1].Value
+        Assert-Equal 16 @($memberSample.Split(',')).Count 'at most 16 job PIDs may enter a log'
+        Assert-Equal 16 @($capturedSample.Split(',')).Count 'at most 16 captured identities may enter a log'
+        Assert-True ($diagnostic -notmatch 'secret|image-name') 'child names, unknown kinds, and window text must not enter a log'
+    }
+
+    Invoke-Test 'settlement diagnostic handles DWORD PID and classifies only known wrapper dialog' {
+        $run = New-TestSettlementSnapshot -MemberPids ([uint32[]] @([uint32]::MaxValue)) -CapturedCount 1 -WindowTitle 'Zombie Killer — PhantomBugz'
+        $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
+        Assert-True ($diagnostic.Contains('job_member_pids=4294967295')) 'DWORD PID must not overflow signed int'
+        Assert-True ($diagnostic.Contains('wrapper_window_present=True')) 'wrapper window presence must be visible'
+        Assert-True ($diagnostic.Contains('wrapper_error_dialog=True')) 'only the exact fixed wrapper title may be classified'
+        $run.Registry.Values | ForEach-Object { $_.Process.MainWindowTitle = 'Zombie Killer — PhantomBugz altered' }
+        $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
+        Assert-True ($diagnostic.Contains('wrapper_error_dialog=False')) 'a near-match title must not be classified as the fixed dialog'
+    }
+
     Invoke-Test 'settlement diagnostic reports exact retained job member state' {
         $owned = New-ZkOwnedStateRoot
         $launch = $null
@@ -244,7 +297,7 @@ if ($IsWindows) {
             Assert-True ($diagnostic.Contains('wrapper_active=True')) 'live exact wrapper must be reported'
             Assert-True ($diagnostic.Contains('native_active=True')) 'live exact native record must be reported'
             Assert-True ($diagnostic.Contains("job_member_pids=$($identity.Pid)")) 'job member PID must come from the retained job'
-            Assert-True ($diagnostic.Contains("captured_live=$($identity.Pid):descendant:")) 'captured member must be reported with exact identity and kind'
+            Assert-True ($diagnostic.Contains("captured_live=$($identity.Pid):descendant")) 'captured member must be reported with exact identity and kind'
             Assert-True ($diagnostic.Contains('runtime_exists=True')) 'owned runtime existence must be reported'
         }
         finally {
