@@ -42,7 +42,7 @@ third-party license/attribution files remain in the embedded package.
 
 To reproduce the wrapper from the Windows x64 ZIP produced by this checkout's
 native packaging step, run the following from the repository root. The archive
-and executable must come from the same source revision. Run the native smoke
+and executable must come from the same source revision. Run the portable lifecycle smoke
 only in a disposable Windows user profile or an ephemeral runner: the engine
 uses `SHGetKnownFolderPath` for some per-user state, so changing `APPDATA` or
 `LOCALAPPDATA` alone does not isolate it.
@@ -59,17 +59,19 @@ pwsh -NoProfile -File scripts/portable-smoke.ps1 `
   -ArchivePath $archive `
   -ReportPath artifacts/portable/smoke-report.json `
   -ExpectedPayloadSha256 $build.payload_sha256
-if ($LASTEXITCODE -ne 0) { throw 'Portable native smoke failed.' }
+if ($LASTEXITCODE -ne 0) { throw 'Portable lifecycle smoke failed.' }
 ```
 
 The builder also runs `--check` on its staged executable with an owned scratch
 `LOCALAPPDATA` before publication to the output directory; that diagnostic
 does not start the native app. Its final JSON line gives the executable path, executable
 SHA-256, and embedded payload SHA-256; the smoke report records the original ZIP
-inventory and native checks. `artifacts/portable/SHA256SUMS` records the executable
+inventory, native readiness, and four exact-job lifecycle checks. The full native
+ZIP smoke is a separate step of `pnpm verify` and the hosted Native build workflow.
+`artifacts/portable/SHA256SUMS` records the executable
 hash. Compare these against the release's independently supplied values before
 using a downloaded artifact. A browser-demo screenshot is not a substitute for
-the native smoke report.
+the native and portable smoke reports.
 
 The build needs Python 3.12+, the installed Rust 1.97.1 Windows MSVC toolchain,
 and its Windows linker/resource tools. Cargo may access its ordinary dependency

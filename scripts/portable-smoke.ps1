@@ -388,10 +388,22 @@ function Get-ZkPortableSettlementDiagnostic {
     $memberSample = @($members | Select-Object -First 16)
     $live = [Collections.Generic.List[string]]::new()
     $liveCount = 0
+    $webview2NameCount = 0
+    $otherDescendantCount = 0
+    $wrapperKey = Get-ZkProcessIdentityKey -Identity $Run.WrapperIdentity
     foreach ($record in $Run.Registry.Values) {
         $record.Process.Refresh()
         if (-not $record.Process.HasExited) {
             $liveCount += 1
+            if ([string] $record.Kind -ceq 'descendant' -and
+                (Get-ZkProcessIdentityKey -Identity $record.Identity) -cne $wrapperKey) {
+                if ([string]::Equals(
+                    [IO.Path]::GetFileName([string] $record.Identity.ExecutablePath),
+                    'msedgewebview2.exe',
+                    [StringComparison]::OrdinalIgnoreCase
+                )) { $webview2NameCount += 1 }
+                else { $otherDescendantCount += 1 }
+            }
             if ($live.Count -lt 16) {
                 $kind = switch ([string] $record.Kind) {
                     'application' { 'application'; break }
@@ -422,7 +434,7 @@ function Get-ZkPortableSettlementDiagnostic {
         }
     }
     $native = $Run.Registry[(Get-ZkProcessIdentityKey -Identity $Run.NativeRecord.Identity)]
-    return "snapshot_nonatomic=True; wrapper_active=$($Run.Launch.IsLaunchedProcessActive()); native_active=$($null -ne $native -and -not $native.Process.HasExited); job_member_count=$($members.Count); job_member_pids=$($memberSample -join ','); job_member_sample_truncated=$($members.Count -gt 16); captured_live_count=$liveCount; captured_live=$($live -join ','); captured_live_sample_truncated=$($liveCount -gt 16); runtime_exists=$(Test-Path -LiteralPath $Run.RuntimeRoot); wrapper_window_present=$windowPresent; wrapper_error_dialog=$errorDialog; wrapper_window_probe_error=$windowProbeError"
+    return "snapshot_nonatomic=True; wrapper_active=$($Run.Launch.IsLaunchedProcessActive()); native_active=$($null -ne $native -and -not $native.Process.HasExited); job_member_count=$($members.Count); job_member_pids=$($memberSample -join ','); job_member_sample_truncated=$($members.Count -gt 16); captured_live_count=$liveCount; captured_live=$($live -join ','); captured_live_sample_truncated=$($liveCount -gt 16); webview2_name_count=$webview2NameCount; other_descendant_count=$otherDescendantCount; runtime_exists=$(Test-Path -LiteralPath $Run.RuntimeRoot); wrapper_window_present=$windowPresent; wrapper_error_dialog=$errorDialog; wrapper_window_probe_error=$windowProbeError"
 }
 
 function Close-ZkPortableRun {
@@ -457,8 +469,8 @@ function Assert-ZkPortableSmokeComplete {
     param([Parameter(Mandatory)][Collections.IDictionary] $Report)
 
     if (-not $Report.state_removed) { throw 'Portable smoke state cleanup was not proven.' }
-    if (-not $Report.passed -or -not $Report.native_smoke -or -not $Report.concurrent_isolation) {
-        throw 'Portable smoke did not complete all native and concurrent launch checks.'
+    if (-not $Report.passed -or -not $Report.native_readiness -or -not $Report.concurrent_isolation) {
+        throw 'Portable smoke did not prove native readiness and concurrent launch isolation.'
     }
     $runs = @($Report.runs)
     if ($runs.Count -ne 4) { throw 'Portable smoke did not complete all four controlled launches.' }
@@ -489,7 +501,7 @@ function Invoke-ZkPortableSmoke {
         passed = $false; executable = $executable; executable_sha256 = (Get-FileHash -LiteralPath $executable -Algorithm SHA256).Hash.ToLowerInvariant()
         archive = (Get-ZkNormalizedPath -Path $ArchivePath); archive_files = $inventory.Files.Count; archive_bytes = $inventory.TotalBytes
         payload_sha256_independently_supplied = (-not [string]::IsNullOrWhiteSpace($ExpectedPayloadSha256))
-        diagnostic = $null; runs = @(); native_smoke = $false; concurrent_isolation = $false
+        diagnostic = $null; runs = @(); native_readiness = $false; concurrent_isolation = $false
         state_root = $owned.Path; state_removed = $false; error = $null
     }
     try {
@@ -508,9 +520,9 @@ function Invoke-ZkPortableSmoke {
         if (-not [string]::IsNullOrWhiteSpace($diagnostic.Stderr)) { throw 'Successful portable diagnostic wrote unexpected stderr.' }
         $report.diagnostic = Assert-ZkPortableCheckResult -Json $diagnostic.Stdout -ExitCode $diagnostic.ExitCode -StateRoot $owned.Path -Inventory $inventory -ExpectedPayloadSha256 $ExpectedPayloadSha256
         $first = Start-ZkPortableRun -ExecutablePath $copy -StateRoot $owned.Path -Runs $runs -Inventory $inventory
-        # Reuse the complete native checks against the exact bytes still owned by the live wrapper.
-        Invoke-ZkNativeSmoke -ExecutablePath $first.ApplicationPath
-        $report.native_smoke = $true
+        # Settle the first wrapper's exact job before another native app can share
+        # its WebView2 user-data folder. The full native ZIP smoke runs separately.
+        $report.native_readiness = $true
         Close-ZkPortableRun -Run $first
         $second = Start-ZkPortableRun -ExecutablePath $copy -StateRoot $owned.Path -Runs $runs -Inventory $inventory
         if (Test-ZkPathEqual -Left $first.RuntimeRoot -Right $second.RuntimeRoot) { throw 'Relaunch reused a prior runtime path.' }

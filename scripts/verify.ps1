@@ -568,7 +568,7 @@ Add-Step -Steps $steps -Name 'Portable Windows diagnostic and native lifecycle s
     catch { throw 'Portable smoke report was not valid JSON.' }
     if ($report -isnot [Collections.IDictionary] -or
         $report['passed'] -ne $true -or $report['state_removed'] -ne $true -or
-        $report['native_smoke'] -ne $true -or $report['concurrent_isolation'] -ne $true -or
+        $report['native_readiness'] -ne $true -or $report['concurrent_isolation'] -ne $true -or
         $report['payload_sha256_independently_supplied'] -ne $true -or
         $report['executable_sha256'] -cne $script:PortableExecutableSha256 -or
         $report['diagnostic']['payload_sha256'] -cne $script:PortablePayloadSha256 -or

@@ -117,6 +117,19 @@ Invoke-Test 'portable smoke does not report success if owned state remains' {
     } 'state.*not removed|state.*cleanup'
 }
 
+Invoke-Test 'portable report requires native readiness and four settled launches' {
+    $runs = @(1..4 | ForEach-Object { [pscustomobject]@{ inventory_verified = $true; settled = $true } })
+    $report = [ordered]@{
+        passed = $true; state_removed = $true; native_readiness = $false
+        concurrent_isolation = $true; runs = $runs
+    }
+    Assert-Throws { Assert-ZkPortableSmokeComplete -Report $report } 'native readiness'
+    $report.native_readiness = $true
+    Assert-ZkPortableSmokeComplete -Report $report
+    $runs[0].settled = $false
+    Assert-Throws { Assert-ZkPortableSmokeComplete -Report $report } 'settlement'
+}
+
 Invoke-Test 'archive inventory measures file bytes and rejects source or debug artifacts' {
     $owned = New-ZkOwnedStateRoot
     try {
@@ -273,6 +286,19 @@ if ($IsWindows) {
         $run.Registry.Values | ForEach-Object { $_.Process.MainWindowTitle = 'Zombie Killer — PhantomBugz altered' }
         $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
         Assert-True ($diagnostic.Contains('wrapper_error_dialog=False')) 'a near-match title must not be classified as the fixed dialog'
+    }
+
+    Invoke-Test 'settlement diagnostic classifies only exact live descendant image names without logging them' {
+        $run = New-TestSettlementSnapshot -MemberPids ([uint32[]] (1..4)) -CapturedCount 4 -WindowTitle 'secret-window'
+        foreach ($record in $run.Registry.Values) {
+            if ($record.Identity.Pid -in @(1, 2, 3)) {
+                $record.Identity.ExecutablePath = Join-Path $PSScriptRoot 'msedgewebview2.exe'
+            }
+        }
+        $diagnostic = Get-ZkPortableSettlementDiagnostic -Run $run
+        Assert-True ($diagnostic.Contains('webview2_name_count=1')) 'only non-wrapper descendants with exact WebView2 image name count'
+        Assert-True ($diagnostic.Contains('other_descendant_count=1')) 'other descendants remain visible as a count'
+        Assert-True ($diagnostic -notmatch 'msedgewebview2.exe|secret-image-name.exe|secret-window') 'names and window text must not enter a log'
     }
 
     Invoke-Test 'settlement diagnostic reports exact retained job member state' {
