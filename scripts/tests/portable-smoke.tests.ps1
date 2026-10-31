@@ -121,13 +121,39 @@ Invoke-Test 'portable report requires native readiness and four settled launches
     $runs = @(1..4 | ForEach-Object { [pscustomobject]@{ inventory_verified = $true; settled = $true } })
     $report = [ordered]@{
         passed = $true; state_removed = $true; native_readiness = $false
-        concurrent_isolation = $true; runs = $runs
+        concurrent_isolation = $true; runs = $runs; webview2_udf_override_distinct_count = 4
     }
     Assert-Throws { Assert-ZkPortableSmokeComplete -Report $report } 'native readiness'
     $report.native_readiness = $true
     Assert-ZkPortableSmokeComplete -Report $report
     $runs[0].settled = $false
     Assert-Throws { Assert-ZkPortableSmokeComplete -Report $report } 'settlement'
+    $runs[0].settled = $true
+    $report.webview2_udf_override_distinct_count = 3
+    Assert-Throws { Assert-ZkPortableSmokeComplete -Report $report } 'WebView2.*distinct'
+}
+
+Invoke-Test 'portable WebView2 override is unique per run and confined to owned state' {
+    $owned = New-ZkOwnedStateRoot
+    $runs = [Collections.Generic.List[object]]::new()
+    try {
+        $executable = (Get-Process -Id $PID).Path
+        $first = New-ZkPortableWebView2StartInfo -ExecutablePath $executable -StateRoot $owned.Path -Runs $runs
+        Assert-Equal $first.UserDataFolder $first.StartInfo.Environment['WEBVIEW2_USER_DATA_FOLDER'] 'first launch must receive its override'
+        Assert-Equal $owned.Path $first.StartInfo.Environment['LOCALAPPDATA'] 'existing sanitized local state must remain'
+        Assert-Equal $first.UserDataFolder (Assert-ZkPortableConfinedPath -Path $first.UserDataFolder -StateRoot $owned.Path) 'first override must be confined'
+        $runs.Add([pscustomobject]@{ WebView2UserDataFolder = $first.UserDataFolder })
+
+        $second = New-ZkPortableWebView2StartInfo -ExecutablePath $executable -StateRoot $owned.Path -Runs $runs
+        Assert-Equal $second.UserDataFolder $second.StartInfo.Environment['WEBVIEW2_USER_DATA_FOLDER'] 'second launch must receive its override'
+        Assert-True (-not (Test-ZkPathEqual -Left $first.UserDataFolder -Right $second.UserDataFolder)) 'launches must not share a WebView2 folder'
+        $runs.Add([pscustomobject]@{ WebView2UserDataFolder = $second.UserDataFolder })
+        Assert-Equal 2 (Get-ZkPortableWebView2OverrideDistinctCount -Runs $runs) 'report evidence must count distinct overrides'
+
+        $runs.Add([pscustomobject]@{ WebView2UserDataFolder = $first.UserDataFolder })
+        Assert-Equal 2 (Get-ZkPortableWebView2OverrideDistinctCount -Runs $runs) 'report evidence must detect reused overrides'
+    }
+    finally { Remove-ZkOwnedStateRoot -StateRoot $owned.Path -MarkerToken $owned.MarkerToken }
 }
 
 Invoke-Test 'archive inventory measures file bytes and rejects source or debug artifacts' {

@@ -287,6 +287,35 @@ function New-ZkPortableReadinessEvidence {
     }
 }
 
+function New-ZkPortableWebView2StartInfo {
+    param(
+        [Parameter(Mandatory)][string] $ExecutablePath,
+        [Parameter(Mandatory)][string] $StateRoot,
+        [Parameter(Mandatory)][AllowEmptyCollection()][Collections.Generic.List[object]] $Runs
+    )
+    $startInfo = New-ZkSanitizedStartInfo -ExecutablePath $ExecutablePath -StateRoot $StateRoot
+    $folder = Assert-ZkPortableConfinedPath -Path (Join-Path $StateRoot ('webview2-user-data-' + [guid]::NewGuid().ToString('N'))) -StateRoot $StateRoot
+    foreach ($run in $Runs) {
+        if (Test-ZkPathEqual -Left $run.WebView2UserDataFolder -Right $folder) {
+            throw 'Portable WebView2 user-data folder was reused across launches.'
+        }
+    }
+    $startInfo.Environment['WEBVIEW2_USER_DATA_FOLDER'] = $folder
+    return [pscustomobject]@{ StartInfo = $startInfo; UserDataFolder = $folder }
+}
+
+function Get-ZkPortableWebView2OverrideDistinctCount {
+    param([Parameter(Mandatory)][AllowEmptyCollection()][Collections.Generic.List[object]] $Runs)
+    $unique = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($run in $Runs) {
+        $folder = [string] $run.WebView2UserDataFolder
+        if (-not [string]::IsNullOrWhiteSpace($folder)) {
+            [void] $unique.Add((Get-ZkNormalizedPath -Path $folder))
+        }
+    }
+    return $unique.Count
+}
+
 function Start-ZkPortableRun {
     param(
         [Parameter(Mandatory)][string] $ExecutablePath,
@@ -294,10 +323,11 @@ function Start-ZkPortableRun {
         [Parameter(Mandatory)][AllowEmptyCollection()][Collections.Generic.List[object]] $Runs,
         [Parameter(Mandatory)][psobject] $Inventory
     )
-    $startInfo = New-ZkSanitizedStartInfo -ExecutablePath $ExecutablePath -StateRoot $StateRoot
-    $launch = Start-ZkJobBoundProcess -StartInfo $startInfo
+    $start = New-ZkPortableWebView2StartInfo -ExecutablePath $ExecutablePath -StateRoot $StateRoot -Runs $Runs
+    $launch = Start-ZkJobBoundProcess -StartInfo $start.StartInfo
     $run = [pscustomobject]@{
         Launch = $launch; Registry = (New-ZkCaptureRegistry); WrapperIdentity = $null
+        WebView2UserDataFolder = $start.UserDataFolder
         ApplicationPath = (Join-Path $StateRoot 'not-yet-discovered.exe')
         EnginePath = (Join-Path $StateRoot 'not-yet-discovered-engine.exe')
         NativeRecord = $null; RuntimeRoot = $null; UiNames = @(); InventoryVerified = $false
@@ -474,6 +504,9 @@ function Assert-ZkPortableSmokeComplete {
     }
     $runs = @($Report.runs)
     if ($runs.Count -ne 4) { throw 'Portable smoke did not complete all four controlled launches.' }
+    if ($Report.webview2_udf_override_distinct_count -ne 4) {
+        throw 'Portable smoke did not prove WebView2 user-data overrides are distinct for four runs.'
+    }
     foreach ($run in $runs) {
         if (-not $run.inventory_verified -or -not $run.settled) {
             throw 'Portable smoke could not prove inventory or process settlement for every launch.'
@@ -502,6 +535,7 @@ function Invoke-ZkPortableSmoke {
         archive = (Get-ZkNormalizedPath -Path $ArchivePath); archive_files = $inventory.Files.Count; archive_bytes = $inventory.TotalBytes
         payload_sha256_independently_supplied = (-not [string]::IsNullOrWhiteSpace($ExpectedPayloadSha256))
         diagnostic = $null; runs = @(); native_readiness = $false; concurrent_isolation = $false
+        webview2_udf_override_distinct_count = 0
         state_root = $owned.Path; state_removed = $false; error = $null
     }
     try {
@@ -520,8 +554,7 @@ function Invoke-ZkPortableSmoke {
         if (-not [string]::IsNullOrWhiteSpace($diagnostic.Stderr)) { throw 'Successful portable diagnostic wrote unexpected stderr.' }
         $report.diagnostic = Assert-ZkPortableCheckResult -Json $diagnostic.Stdout -ExitCode $diagnostic.ExitCode -StateRoot $owned.Path -Inventory $inventory -ExpectedPayloadSha256 $ExpectedPayloadSha256
         $first = Start-ZkPortableRun -ExecutablePath $copy -StateRoot $owned.Path -Runs $runs -Inventory $inventory
-        # Settle the first wrapper's exact job before another native app can share
-        # its WebView2 user-data folder. The full native ZIP smoke runs separately.
+        # Keep the exact job settlement gate before starting a second wrapper.
         $report.native_readiness = $true
         Close-ZkPortableRun -Run $first
         $second = Start-ZkPortableRun -ExecutablePath $copy -StateRoot $owned.Path -Runs $runs -Inventory $inventory
@@ -556,6 +589,7 @@ function Invoke-ZkPortableSmoke {
         try {
             if ($diagnosticSettled) { $report.state_removed = Remove-ZkPortableSmokeState -OwnedState $owned -Runs @($runs.ToArray()) }
             if (-not $report.state_removed) { Write-Warning "Portable smoke state retained at '$($owned.Path)' because lifecycle settlement was not proven." }
+            $report.webview2_udf_override_distinct_count = Get-ZkPortableWebView2OverrideDistinctCount -Runs $runs
             $report.runs = @($runs | ForEach-Object {
                 [pscustomobject]@{
                     wrapper = $_.WrapperIdentity; native = $(if ($null -ne $_.NativeRecord) { $_.NativeRecord.Identity } else { $null })
