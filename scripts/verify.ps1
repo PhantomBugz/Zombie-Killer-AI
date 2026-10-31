@@ -374,8 +374,19 @@ Add-Step -Steps $steps -Name 'Ruff check' -Enabled (-not $SkipPython) -Action {
     )
 }
 Add-Step -Steps $steps -Name 'mypy strict type checking' -Enabled (-not $SkipPython) -Action {
-    Invoke-External -FilePath 'uv' -ArgumentList @(
-        'run', '--frozen', 'mypy',
+    if (-not $IsWindows) {
+        Invoke-External -FilePath 'uv' -ArgumentList @(
+            'run', '--frozen', 'mypy',
+            'scripts/package-native-artifact.py',
+            'scripts/collect-sidecar-legal.py',
+            'scripts/python_package_artifacts.py'
+        )
+    }
+    $mypyArguments = @('run', '--frozen', 'mypy')
+    if (-not $IsWindows) {
+        $mypyArguments += @('--platform', 'win32')
+    }
+    Invoke-External -FilePath 'uv' -ArgumentList ($mypyArguments + @(
         'services/engine/src', 'packages/sdk-python/src',
         'scripts/package-native-artifact.py',
         'scripts/collect-sidecar-legal.py',
@@ -383,7 +394,7 @@ Add-Step -Steps $steps -Name 'mypy strict type checking' -Enabled (-not $SkipPyt
         'scripts/repository_state.py',
         'scripts/verify_python_distributions.py',
         'scripts/tests'
-    )
+    ))
 }
 Add-Step -Steps $steps -Name 'Engine tests: services/engine/tests' -Enabled (-not $SkipPython) -Action {
     Invoke-External -FilePath 'uv' -ArgumentList @(

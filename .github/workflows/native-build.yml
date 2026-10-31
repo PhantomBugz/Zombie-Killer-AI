@@ -186,15 +186,11 @@ jobs:
           }
       - name: Generate lock and sidecar file-inventory SBOMs
         run: pnpm sbom -- --output artifacts/sbom --sidecar-manifest apps/desktop/src-tauri/resources/engine/BUILD-MANIFEST.json
-      - name: Upload unsigned verification artifact
+      - name: Upload native SBOM verification evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: unsigned-native-${{ runner.os }}-${{ runner.arch }}
-          path: |
-            artifacts/native/**
-            artifacts/portable/Zombie Killer.exe
-            artifacts/portable/SHA256SUMS
-            artifacts/sbom/**
+          name: native-sbom-${{ runner.os }}-${{ runner.arch }}
+          path: artifacts/sbom/**
           if-no-files-found: error
           include-hidden-files: false
           retention-days: 7

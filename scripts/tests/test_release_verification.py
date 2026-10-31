@@ -525,14 +525,15 @@ def test_release_workflow_rejects_bad_confirmation_as_first_mandatory_step() -> 
     assert re.search(r"(?m)^        if:", validation) is None
 
 
-def test_native_workflow_verifies_portable_exe_before_upload() -> None:
+def test_native_workflow_verifies_portable_exe_before_sbom_only_upload() -> None:
     workflow = (ROOT / ".github" / "workflows" / "native-build.yml").read_text(encoding="utf-8")
     package_position = workflow.index("Package complete unsigned native verification archive")
     helper_position = workflow.index("Verify portable builder and smoke helpers")
     portable_position = workflow.index("Verify unsigned portable Windows executable")
-    upload_position = workflow.index("Upload unsigned verification artifact")
+    sbom_position = workflow.index("Generate lock and sidecar file-inventory SBOMs")
+    upload_position = workflow.index("Upload native SBOM verification evidence")
 
-    assert package_position < helper_position < portable_position < upload_position
+    assert package_position < helper_position < portable_position < sbom_position < upload_position
     helper_step = workflow[helper_position:portable_position]
     assert "scripts/tests/native-smoke.tests.ps1" in helper_step
     assert "scripts/tests/portable-smoke.tests.ps1" in helper_step
@@ -543,8 +544,10 @@ def test_native_workflow_verifies_portable_exe_before_upload() -> None:
     assert "-ExpectedPayloadSha256" in portable_step
     assert "state_removed" in portable_step
     assert "payload_sha256_independently_supplied" in portable_step
-    assert "artifacts/portable/Zombie Killer.exe" in workflow[upload_position:]
-    assert "artifacts/portable/SHA256SUMS" in workflow[upload_position:]
+    upload_step = workflow[upload_position:]
+    assert "path: artifacts/sbom/**" in upload_step
+    assert "artifacts/native/" not in upload_step
+    assert "artifacts/portable/" not in upload_step
 
 
 def test_powershell_orchestrator_has_strict_release_contract() -> None:

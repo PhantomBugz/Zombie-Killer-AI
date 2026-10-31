@@ -106,11 +106,18 @@ function assertHostedWindowsSourceGatePolicy(text) {
   assert.match(portable.run, /scripts\/portable-smoke\.ps1/u)
   assert.match(portable.run, /-ExpectedPayloadSha256/u)
   assert.match(portable.run, /state_removed/u)
-  const upload = named('Upload unsigned verification artifact')
-  assert.match(upload.with.path, /artifacts\/portable\/Zombie Killer\.exe/u)
-  assert.match(upload.with.path, /artifacts\/portable\/SHA256SUMS/u)
+  const upload = named('Upload native SBOM verification evidence')
+  assert.ok(upload, 'native verification must retain SBOM evidence')
+  assert.equal(upload.with.name, 'native-sbom-${{ runner.os }}-${{ runner.arch }}')
+  assert.equal(upload.with.path, 'artifacts/sbom/**', 'native CI must upload SBOMs only')
+  assert.equal(upload.with['if-no-files-found'], 'error')
+  assert.deepEqual(
+    steps.filter((step) => step?.uses?.startsWith('actions/upload-artifact@')),
+    [upload],
+    'native CI must not have another artifact upload step',
+  )
   const archiveSmoke = named('Smoke test the extracted Windows native archive')
-  assert.ok(archiveSmoke, 'the offered Windows ZIP must be smoked after extraction')
+  assert.ok(archiveSmoke, 'the runner-local Windows ZIP must be smoked after extraction')
   assert.equal(archiveSmoke.if, "runner.os == 'Windows'")
   assert.equal(archiveSmoke.env?.ZK_DISPOSABLE_WINDOWS_PROFILE, '1')
   assert.match(archiveSmoke.run, /RUNNER_ENVIRONMENT -ne 'github-hosted'/u)
@@ -119,7 +126,8 @@ function assertHostedWindowsSourceGatePolicy(text) {
   assert.match(archiveSmoke.run, /scripts\/native-smoke\.ps1/u)
   assert.ok(position(windowsPackage.name) < position(archiveSmoke.name))
   assert.ok(position(archiveSmoke.name) < position(portable.name))
-  assert.ok(position(portable.name) < position(upload.name))
+  assert.ok(position(portable.name) < position('Generate lock and sidecar file-inventory SBOMs'))
+  assert.ok(position('Generate lock and sidecar file-inventory SBOMs') < position(upload.name))
 }
 
 function assertCargoDependabotPolicy(text) {
