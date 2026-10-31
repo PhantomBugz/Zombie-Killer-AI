@@ -164,6 +164,19 @@ def test_whole_store_validation_rejects_duplicate_deep_and_oversize_input(
         _adapter(pathological, tmp_path).query()
 
 
+def test_jsonl_pathological_nesting_is_rejected_without_recursion_crash(
+    tmp_path: Path,
+) -> None:
+    pathological = tmp_path / "pathological.jsonl"
+    pathological.write_text(
+        '{"id":"x","content":"x","metadata":' + "[" * 1500 + "0" + "]" * 1500 + "}\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(MemoryError, match="invalid JSONL record|depth"):
+        _adapter(pathological, tmp_path).query()
+
+
 def test_json_plan_backup_apply_and_restore_are_revision_bound(tmp_path: Path) -> None:
     source = tmp_path / "memory.json"
     source.write_text('[{"id":"a","content":"old","metadata":{}}]', encoding="utf-8")

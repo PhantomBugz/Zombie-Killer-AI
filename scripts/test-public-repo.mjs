@@ -182,7 +182,19 @@ assert.equal(
 assert.match(windowsPythonTests.run, /^\s*\$ErrorActionPreference = 'Stop'/u)
 assert.match(ciWorkflow, /pytest services\/engine\/tests packages\/sdk-python\/tests packages\/protocol\/tests scripts\/tests -q/u)
 assert.match(ciWorkflow, /ruff check services\/engine packages\/sdk-python packages\/protocol\/tests scripts/u)
-assert.match(ciWorkflow, /mypy services\/engine\/src packages\/sdk-python\/src scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py scripts\/tests/u)
+const pythonSteps = parse(ciWorkflow)?.jobs?.python?.steps ?? []
+const linuxStaticStep = pythonSteps.find((step) => step.name === 'Static Python checks')
+assert.equal(linuxStaticStep?.if, "matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'")
+assert.match(
+  linuxStaticStep?.run ?? '',
+  /mypy scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py/u,
+)
+const windowsMypyStep = pythonSteps.find((step) => step.name === 'Type-check Windows source and release tooling')
+assert.equal(windowsMypyStep?.if, "matrix.os == 'windows-2025' && matrix.python == '3.12'")
+assert.match(
+  windowsMypyStep?.run ?? '',
+  /mypy services\/engine\/src packages\/sdk-python\/src scripts\/package-native-artifact\.py scripts\/collect-sidecar-legal\.py scripts\/python_package_artifacts\.py scripts\/tests/u,
+)
 assert.match(ciWorkflow, /python scripts\/python_package_artifacts\.py --dist dist/u)
 
 const nativeWorkflow = readFileSync(path.join(root, '.github/workflows/native-build.yml'), 'utf8')

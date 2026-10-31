@@ -81,7 +81,10 @@ jobs:
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |
           uv run ruff check services/engine packages/sdk-python packages/protocol/tests scripts
-          uv run mypy services/engine/src packages/sdk-python/src scripts/package-native-artifact.py scripts/collect-sidecar-legal.py scripts/python_package_artifacts.py scripts/tests
+          uv run mypy scripts/package-native-artifact.py scripts/collect-sidecar-legal.py scripts/python_package_artifacts.py
+      - name: Type-check Windows source and release tooling
+        if: matrix.os == 'windows-2025' && matrix.python == '3.12'
+        run: uv run mypy services/engine/src packages/sdk-python/src scripts/package-native-artifact.py scripts/collect-sidecar-legal.py scripts/python_package_artifacts.py scripts/tests
       - name: Build Python distributions
         if: matrix.os == 'ubuntu-24.04' && matrix.python == '3.12'
         run: |

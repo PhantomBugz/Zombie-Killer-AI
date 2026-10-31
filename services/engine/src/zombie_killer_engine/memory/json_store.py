@@ -177,7 +177,7 @@ class JsonMemoryAdapter:
                         parse_constant=self._reject_constant,
                         object_pairs_hook=self._unique_object,
                     )
-                except (TypeError, ValueError, json.JSONDecodeError) as error:
+                except (TypeError, ValueError, RecursionError, json.JSONDecodeError) as error:
                     raise MemoryError(f"invalid JSONL record at line {line_number}") from error
                 if not isinstance(value, dict):
                     raise MemoryError(f"JSONL line {line_number} is not an object")
@@ -190,7 +190,7 @@ class JsonMemoryAdapter:
                 parse_constant=self._reject_constant,
                 object_pairs_hook=self._unique_object,
             )
-        except (TypeError, ValueError, json.JSONDecodeError) as error:
+        except (TypeError, ValueError, RecursionError, json.JSONDecodeError) as error:
             raise MemoryError("vault is malformed JSON") from error
         if not isinstance(value, (list, dict)):
             raise MemoryError("JSON vault root must be an array or keyed object")
