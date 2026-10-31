@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 import struct
+import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -129,6 +130,8 @@ def test_memory_plan_execute_snapshot_restore_survives_service_restart(
 
 def test_diagnostics_export_and_receipt_lookup_survive_service_restart(tmp_path: Path) -> None:
     paths = paths_for(tmp_path)
+    if os.name == "nt":
+        WindowsPermissionBackend().restrict(tmp_path)
     destination = tmp_path / "diagnostics.json"
     plan = call(paths, "diagnostics.export-plan", {"destination": str(destination)})
     receipt = call(
@@ -139,6 +142,44 @@ def test_diagnostics_export_and_receipt_lookup_survive_service_restart(tmp_path:
     assert json.loads(destination.read_text())["local_only"] is True
     fetched = call(paths, "receipt.get", {"receipt_id": receipt["receipt_id"]})
     assert fetched["receipt_id"] == receipt["receipt_id"]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows ACLs are platform-specific")
+def test_diagnostics_export_rejects_untrusted_parent_then_accepts_secured_parent(
+    tmp_path: Path,
+) -> None:
+    paths = paths_for(tmp_path)
+    export_dir = tmp_path / "exports"
+    export_dir.mkdir()
+    WindowsPermissionBackend().restrict(export_dir)
+    destination = export_dir / "diagnostics.json"
+    granted = subprocess.run(
+        ["icacls", str(export_dir), "/grant", "*S-1-1-0:(OI)(CI)M"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if granted.returncode != 0:
+        pytest.skip(f"ACL modification unavailable: {granted.stderr.strip()}")
+    try:
+        with build_default_service(paths=paths) as service:
+            response = service.dispatch(
+                RequestEnvelope(
+                    protocol_version="1.0",
+                    request_id=uuid4(),
+                    method="diagnostics.export-plan",
+                    payload={"destination": str(destination)},
+                ),
+                context=RequestContext(capability=Capability.EXECUTION, local_control=True),
+            )
+        assert not response.ok
+        assert response.error is not None and response.error.code.value == "invalid_request"
+        assert not destination.exists()
+    finally:
+        WindowsPermissionBackend().restrict(export_dir)
+
+    plan = call(paths, "diagnostics.export-plan", {"destination": str(destination)})
+    assert plan["plan_id"]
 
 
 def test_sqlite_scalar_edit_and_restore_with_nonstandard_extension(tmp_path: Path) -> None:
