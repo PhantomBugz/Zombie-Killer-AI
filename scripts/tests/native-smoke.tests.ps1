@@ -400,6 +400,12 @@ if ($IsWindows) {
             Assert-True (-not (Test-ZkLaunchSettled -Launch $launch)) 'live unbound launch must prevent state cleanup'
             Assert-True ($launch.TerminateLaunchedProcess(5000)) 'the original retained process handle must stop the unbound launch'
             Assert-True $launched.WaitForExit(5000) 'the unbound launched process must exit'
+            # Process exit and Job Object membership are separate observations.
+            # The exact job must drain within a bound before state can be removed.
+            $settleDeadline = [DateTime]::UtcNow.AddSeconds(5)
+            while (-not (Test-ZkLaunchSettled -Launch $launch) -and [DateTime]::UtcNow -lt $settleDeadline) {
+                Start-Sleep -Milliseconds 20
+            }
             Assert-True (Test-ZkLaunchSettled -Launch $launch) 'terminated unbound launch with no children must settle'
             $siblingMatch = Get-ZkMatchingProcess -Identity $siblingIdentity
             Assert-True ($null -ne $siblingMatch) 'same-runtime sibling must remain alive'
