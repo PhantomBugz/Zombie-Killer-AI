@@ -22,7 +22,7 @@ This public alpha contains source archives only. No prebuilt native executable o
 - Narrow Rust broker that launches only the verified local engine resource over standard I/O.
 - Open-source governance, security, privacy, documentation, and verification workflows.
 - Layout-preserving unsigned native archives with hidden engine inventory entries, source legal material, and manifest-bound Python runtime attribution.
-- A single-file unsigned Windows x64 portable wrapper built from the verified native ZIP, with an extraction diagnostic and native smoke coverage. It remains a CI verification artifact and is not attached to this source-only release.
+- A single-file unsigned Windows x64 portable wrapper built from the verified native ZIP for runner-local extraction diagnostics and lifecycle smoke checks. The binary is not uploaded or attached to this source-only release.
 - This alpha source tree does not certify a signed installer, package-registry publication, or clean-machine/platform release approval; those are separate release decisions.
 
 ### Fixed

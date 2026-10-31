@@ -191,6 +191,10 @@ The SDK continues safely when Zombie Killer is absent. Status fields are bounded
 - [Contributing](CONTRIBUTING.md)
 - [Optional donations](DONATIONS.md)
 
+## More from PhantomBugz
+
+[liveD LoRA Studio](https://github.com/PhantomBugz/lived-lora-studio) is our Apache-2.0 developer preview for reviewed LoRA workflows. Its public demo uses synthetic data; training is pending. Explore the projects at [PhantomBugz](https://phantombugz.com/).
+
 ## License and attribution
 
 Code is licensed under [Apache License 2.0](LICENSE). The original Zombie Killer mark is licensed under [CC BY 4.0](LICENSES/CC-BY-4.0.txt); attribution details are in [NOTICE](NOTICE). Bundled fonts and dependency notices are recorded in [Third-Party Notices](THIRD_PARTY_NOTICES.md).
