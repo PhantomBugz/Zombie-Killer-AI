@@ -16,11 +16,12 @@ Target source version: `[0.1.0-alpha.1]`. This section remains unreleased until 
 - Durable mixed-operation receipts and reviewed local diagnostics export without overwriting existing files or exporting private memory drafts.
 - Versioned, bounded local JSON protocol, headless CLI, and Python lifecycle SDK.
 - Tauri/React Containment Console, deterministic browser demo, activity receipts, settings, and command palette.
+- One-command synthetic browser demo (`pnpm demo`) that installs lockfile-pinned JavaScript dependencies and binds Vite to localhost without starting the native engine.
 - Narrow Rust broker that launches only the verified local engine resource over standard I/O.
 - Open-source governance, security, privacy, documentation, and verification workflows.
 - Layout-preserving unsigned native archives with hidden engine inventory entries, source legal material, and manifest-bound Python runtime attribution.
 - A single-file unsigned Windows x64 portable wrapper built from the verified native ZIP, with an extraction diagnostic and native smoke coverage. The executable is not a signed installer or public download yet.
-- Signing, package publication, and clean-machine/platform release approval remain pending; no external release was published.
+- This alpha source tree does not certify a signed installer, package publication, or clean-machine/platform release approval; those are separate release decisions.
 
 ### Fixed
 

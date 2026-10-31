@@ -35,6 +35,7 @@
     "typecheck": "pnpm run typecheck:protocol && node scripts/run-workspace-gate.mjs typecheck",
     "typecheck:protocol": "pnpm --dir apps/desktop exec tsc -p ../../packages/protocol/tsconfig.json",
     "build": "node scripts/run-workspace-gate.mjs build",
+    "demo": "pnpm install --frozen-lockfile && pnpm --filter @zombie-killer/desktop dev --host 127.0.0.1",
     "verify:web": "pnpm run toolchain:check && pnpm run lint:docs && pnpm run lint && pnpm run typecheck && pnpm run test:docs && pnpm run test && pnpm run build",
     "verify": "pwsh -NoProfile -File scripts/verify.ps1"
   },

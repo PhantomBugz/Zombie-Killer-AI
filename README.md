@@ -8,7 +8,7 @@
 
 **Made by [PhantomBugz](https://PhantomBugz.com)**
 
-**Current source version:** `0.1.0-alpha.1` (unreleased development build; no signed release is claimed)
+**Source version:** `0.1.0-alpha.1`. This source tree is not a signed installer; [GitHub Releases](https://github.com/PhantomBugz/Zombie-Killer-AI/releases) is the record of downloadable artifacts.
 
 The [project page](https://phantombugz.com/zombie-killer.html) tracks public availability. Use only downloads linked from a verified project release; the browser preview is synthetic and does not exercise native process actions.
 
@@ -56,7 +56,17 @@ Read [Privacy](PRIVACY.md), [Responsible Use](RESPONSIBLE_USE.md), and the [thre
 
 ## Quick start
 
-### Prerequisites
+### One-command synthetic browser demo
+
+From a source checkout with Node.js `24.18.0` and pnpm `10.33.2` through Corepack already installed, run:
+
+```shell
+pnpm demo
+```
+
+This installs the lockfile-pinned JavaScript dependencies, then starts the synthetic browser preview on `127.0.0.1`. Open the localhost URL printed by Vite; press Ctrl+C to stop it. The preview uses fixture agents and cannot inspect or mutate host processes. The first install may need network access. Python, Rust, and Tauri system prerequisites are for the full source or native workflows below.
+
+### Full source and native prerequisites
 
 - Git
 - PowerShell 7 or newer (`pwsh`)
@@ -68,7 +78,7 @@ Read [Privacy](PRIVACY.md), [Responsible Use](RESPONSIBLE_USE.md), and the [thre
 
 The repository rejects mismatched Node or pnpm versions in CI. Do not use the documented local bootstrap bypass for release verification.
 
-The clone commands below require the planned public repository to be available. With an existing source checkout, open its root and start at `corepack enable`.
+Clone the repository if your GitHub account can access it, or use an existing source checkout. The commands below run the broader source checks; the synthetic browser demo above needs only its stated prerequisites.
 
 ### Windows (PowerShell 7)
 
@@ -108,7 +118,7 @@ If you have a built `unsigned-native-windows-<architecture>.zip`, right-click it
 
 ### Windows single-file portable executable
 
-If a verified `Zombie Killer.exe` and its `SHA256SUMS` are supplied with a release, check the executable's hash before opening it. This unsigned Windows x64 alpha build embeds the same native app and engine as the ZIP, extracts them into a fresh directory under `%LOCALAPPDATA%` for each run, and removes that directory after a normal exit. It requires an installed WebView2 runtime, but no Node, Python, or Rust installation. Forced termination can leave an extraction directory behind. See the [portable Windows guide](docs/portable-windows.md) for the build, `--check` diagnostic, and cleanup details. No public download is claimed by this source tree.
+If a verified `Zombie Killer.exe` and its `SHA256SUMS` are supplied with a release, check the executable's hash before opening it. This unsigned Windows x64 alpha build embeds the same native app and engine as the ZIP, extracts them into a fresh directory under `%LOCALAPPDATA%` for each run, and removes that directory after a normal exit. It requires an installed WebView2 runtime, but no Node, Python, or Rust installation. Forced termination can leave an extraction directory behind. See the [portable Windows guide](docs/portable-windows.md) for the build, `--check` diagnostic, and cleanup details. Check [GitHub Releases](https://github.com/PhantomBugz/Zombie-Killer-AI/releases) for current download availability; a source checkout is not a prebuilt executable.
 
 ### From source
 
