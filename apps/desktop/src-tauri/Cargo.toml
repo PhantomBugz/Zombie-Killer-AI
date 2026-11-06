@@ -19,17 +19,17 @@ name = "zombie-killer"
 path = "src/main.rs"
 
 [build-dependencies]
-libc = "=0.2.189"
+libc = "=0.2.191"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-sha2 = "0.10.9"
+sha2 = "0.11.1"
 tauri-build = { version = "=2.6.3", features = [] }
 
 [dependencies]
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
-sha2 = "0.10.9"
-tauri = { version = "=2.11.5", default-features = false, features = ["wry"] }
+sha2 = "0.11.1"
+tauri = { version = "=2.11.6", default-features = false, features = ["wry"] }
 thiserror = "2.0.17"
 tokio = { version = "1.47.1", features = ["io-util", "macros", "process", "rt-multi-thread", "sync", "time"] }
 uuid = { version = "1.18.1", features = ["serde", "v4"] }
@@ -38,7 +38,7 @@ uuid = { version = "1.18.1", features = ["serde", "v4"] }
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Diagnostics_ToolHelp", "Win32_System_JobObjects", "Win32_System_Threading"] }
 
 [target.'cfg(unix)'.dependencies]
-libc = "=0.2.189"
+libc = "=0.2.191"
 
 [dev-dependencies]
 tempfile = "3.22.0"
