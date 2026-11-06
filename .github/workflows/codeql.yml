@@ -34,12 +34,12 @@ jobs:
           - python
     steps:
       - name: Check out source
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3.37.6
+        uses: github/codeql-action/init@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
         with:
           languages: ${{ matrix.language }}
       - name: Analyze
-        uses: github/codeql-action/analyze@c4dd10e44af883a891fe31ced449bcb4a6728b9b # v3.37.6
+        uses: github/codeql-action/analyze@1fc58d04a4d4374f921bdac573c3811c240f9c26 # v4.39.2
